@@ -63,18 +63,23 @@ passport.use(
     { usernameField: "email" },
     async (email, password, done) => {
       try {
+        console.log('Attempting login for email:', email);
         const user = await storage.getUserByEmail(email);
         if (!user) {
+          console.log('User not found for email:', email);
           return done(null, false, { message: "Invalid email or password" });
         }
 
         const isValid = await bcrypt.compare(password, user.password);
         if (!isValid) {
+          console.log('Invalid password for user:', email);
           return done(null, false, { message: "Invalid email or password" });
         }
 
+        console.log('Login successful for user:', email);
         return done(null, user);
       } catch (error) {
+        console.error('Database error during login:', error);
         return done(error);
       }
     }
@@ -243,6 +248,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
     });
+  });
+
+  // Health check endpoint to test database connection
+  app.get("/api/health", async (req, res) => {
+    try {
+      console.log('Health check requested');
+      
+      // Test database connection
+      const userCount = await db.select({ count: sql`count(*)` }).from(schema.users);
+      console.log('Database connection successful, user count:', userCount[0]?.count);
+      
+      res.json({ 
+        status: 'healthy', 
+        database: 'connected',
+        userCount: userCount[0]?.count,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Health check failed:', error);
+      res.status(500).json({ 
+        status: 'unhealthy', 
+        database: 'disconnected',
+        error: error.message,
+        timestamp: new Date().toISOString()
+      });
+    }
   });
 
   // Broadcast function for real-time updates
