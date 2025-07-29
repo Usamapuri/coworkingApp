@@ -1,5 +1,5 @@
-import { db } from './db';
-import { schema } from '../shared/schema';
+import { db } from './storage.js';
+import { schema } from '../shared/schema.js';
 import { sql } from 'drizzle-orm';
 
 async function testDatabaseConnection() {

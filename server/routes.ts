@@ -9,10 +9,10 @@ import { Strategy as LocalStrategy } from "passport-local";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
-import { storage, db } from "./storage";
-import * as schema from "@shared/schema";
+import { storage, db } from "./storage.js";
+import * as schema from "@shared/schema.js";
 import { eq, desc, sql, asc, and, or } from "drizzle-orm";
-import { emailService } from "./email-service";
+import { emailService } from "./email-service.js";
 import webpush from "web-push";
 import { fileURLToPath } from 'url';
 
