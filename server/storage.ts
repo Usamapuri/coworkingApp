@@ -122,7 +122,7 @@ export class DatabaseStorage implements IStorage {
   async getOrganizations(site?: string): Promise<schema.Organization[]> {
     if (site && site !== 'all') {
       return await db.select().from(schema.organizations)
-        .where(eq(schema.organizations.site, site))
+        .where(eq(schema.organizations.site, site as any))
         .orderBy(asc(schema.organizations.name));
     } else {
       return await db.select().from(schema.organizations)
@@ -281,7 +281,7 @@ export class DatabaseStorage implements IStorage {
       orders = await baseQuery.where(eq(schema.cafe_orders.org_id, orgId))
         .orderBy(desc(schema.cafe_orders.created_at));
     } else if (site && site !== 'all') {
-      orders = await baseQuery.where(eq(schema.cafe_orders.site, site))
+      orders = await baseQuery.where(eq(schema.cafe_orders.site, site as any))
         .orderBy(desc(schema.cafe_orders.created_at));
     } else {
       orders = await baseQuery.orderBy(desc(schema.cafe_orders.created_at));
@@ -482,7 +482,7 @@ export class DatabaseStorage implements IStorage {
       conditions.push(eq(schema.meeting_bookings.org_id, orgId));
     }
     if (site && site !== 'all') {
-      conditions.push(eq(schema.meeting_rooms.site, site));
+      conditions.push(eq(schema.meeting_rooms.site, site as any));
     }
 
     if (conditions.length > 0) {
@@ -594,7 +594,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async createAnnouncement(announcement: schema.InsertAnnouncement): Promise<schema.Announcement> {
+  async createAnnouncement(announcement: any): Promise<schema.Announcement> {
     const [newAnnouncement] = await db.insert(schema.announcements).values(announcement).returning();
     return newAnnouncement;
   }

@@ -20,7 +20,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Session configuration
-const sessionConfig = {
+const sessionConfig: any = {
   secret: process.env.SESSION_SECRET || "your-secret-key-here",
   resave: false,
   saveUninitialized: false,
@@ -28,7 +28,7 @@ const sessionConfig = {
     secure: false, // Set to false for development to ensure cookies work
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
     httpOnly: true,
-    sameSite: "lax", // More permissive for development
+    sameSite: "lax" as const, // More permissive for development
   },
 };
 
@@ -671,6 +671,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           menu_item_id: item.menu_item_id,
           quantity: item.quantity,
           price: menuItem.price,
+          order_id: 0, // Will be set by the storage function
         });
       }
 
@@ -910,7 +911,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/bookings/:id/cancel", requireAuth, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const userId = req.user.id;
+      const userId = (req.user as any)?.id;
       
       // Get the booking details first
       const booking = await storage.getMeetingBookingById(id);
@@ -1323,7 +1324,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updates = req.body;
       
       // Check if user is updating their own profile
-      if (req.user.id !== userId) {
+      if ((req.user as any)?.id !== userId) {
         return res.status(403).json({ message: "Not authorized to update this profile" });
       }
       
@@ -1417,8 +1418,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const today = new Date();
       const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
-      const monthlyOrders = orders.filter(order => new Date(order.created_at) >= startOfMonth);
-      const monthlyBookings = bookings.filter(booking => new Date(booking.created_at) >= startOfMonth);
+      const monthlyOrders = orders.filter(order => order.created_at && new Date(order.created_at) >= startOfMonth);
+      const monthlyBookings = bookings.filter(booking => booking.created_at && new Date(booking.created_at) >= startOfMonth);
 
       const totalRevenue = orders.reduce((sum, order) => sum + parseFloat(order.total_amount), 0);
       const monthlyRevenue = monthlyOrders.reduce((sum, order) => sum + parseFloat(order.total_amount), 0);
@@ -1482,13 +1483,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Filter by month/year
       const filteredOrders = orders.filter((order: any) => {
-        const orderDate = new Date(order.created_at);
-        return orderDate.getMonth() === month && orderDate.getFullYear() === year;
+        const orderDate = order.created_at ? new Date(order.created_at) : null;
+        return orderDate && orderDate.getMonth() === month && orderDate.getFullYear() === year;
       });
 
       const filteredBookings = bookings.filter((booking: any) => {
-        const bookingDate = new Date(booking.created_at);
-        return bookingDate.getMonth() === month && bookingDate.getFullYear() === year;
+        const bookingDate = booking.created_at ? new Date(booking.created_at) : null;
+        return bookingDate && bookingDate.getMonth() === month && bookingDate.getFullYear() === year;
       });
 
       // Generate PDF invoice (simplified for now)
