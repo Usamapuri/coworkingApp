@@ -294,7 +294,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ 
         status: 'unhealthy', 
         database: 'disconnected',
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
         timestamp: new Date().toISOString()
       });
     }
@@ -1307,7 +1307,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Apply site filter if provided
       if (site && site !== 'all') {
-        query = query.where(eq(schema.users.site, site as string));
+        query = query.where(eq(schema.users.site, site as 'blue_area' | 'i_10'));
       }
 
       const users = await query.orderBy(desc(schema.users.created_at));
