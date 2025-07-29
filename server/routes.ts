@@ -15,6 +15,7 @@ import { eq, desc, sql, asc, and, or } from "drizzle-orm";
 import { emailService } from "./email-service.js";
 import webpush from "web-push";
 import { fileURLToPath } from 'url';
+import pgSession from "connect-pg-simple";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -25,10 +26,10 @@ const sessionConfig: any = {
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: false, // Set to false for development to ensure cookies work
+    secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
     httpOnly: true,
-    sameSite: "lax" as const, // More permissive for development
+    sameSite: process.env.NODE_ENV === 'production' ? "strict" : "lax" as const,
   },
 };
 
@@ -172,8 +173,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Session and passport setup
-  app.use(session(sessionConfig));
+  // Configure session store for production
+  let sessionStore = undefined;
+  if (process.env.NODE_ENV === 'production' && process.env.DATABASE_URL) {
+    try {
+      const PostgresStore = pgSession(session);
+      sessionStore = new PostgresStore({
+        conObject: {
+          connectionString: process.env.DATABASE_URL,
+          ssl: { rejectUnauthorized: false }
+        },
+        tableName: 'sessions'
+      });
+      console.log('✅ Using PostgreSQL session store for production');
+    } catch (error) {
+      console.warn('⚠️ Failed to initialize PostgreSQL session store, falling back to MemoryStore:', error);
+    }
+  }
+
+  // Session and passport setup with production-ready store
+  const productionSessionConfig = {
+    ...sessionConfig,
+    store: sessionStore
+  };
+  
+  app.use(session(productionSessionConfig));
   app.use(passport.initialize());
   app.use(passport.session());
   

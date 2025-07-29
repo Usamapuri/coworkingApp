@@ -2,6 +2,10 @@ import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
 import { eq, and, desc, asc, gte, lte, sql, or, isNull, gt } from "drizzle-orm";
 import * as schema from "../shared/schema.js";
+import dotenv from "dotenv";
+
+// Load environment variables
+dotenv.config();
 
 const sql_client = neon(process.env.DATABASE_URL!);
 export const db = drizzle(sql_client, { schema });
