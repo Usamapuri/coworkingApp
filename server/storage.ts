@@ -490,10 +490,7 @@ export class DatabaseStorage implements IStorage {
     }
 
     if (conditions.length > 0) {
-      query = query.where(conditions.length === 1 ? conditions[0] : and(...conditions));
-    } else {
-      // Add a default where clause to satisfy TypeScript
-      query = query.where(sql`1=1`);
+      (query as any).where(conditions.length === 1 ? conditions[0] : and(...conditions));
     }
 
     return await query.orderBy(desc(schema.meeting_bookings.created_at));
