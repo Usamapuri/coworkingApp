@@ -13,7 +13,8 @@
     "setup": "node setup-database.js",
     "test:db": "node test-connection-esm.js",
     "fix:production": "node fix-production-issues.js",
-    "test:quick": "node quick-test.js"
+    "test:quick": "node quick-test.js",
+    "fix:vercel": "node fix-vercel-connection.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
