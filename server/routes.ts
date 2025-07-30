@@ -1308,6 +1308,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Apply site filter if provided
       if (site && site !== 'all') {
         query = query.where(eq(schema.users.site, site as 'blue_area' | 'i_10'));
+      } else {
+        // Add a default where clause to satisfy TypeScript
+        query = query.where(sql`1=1`);
       }
 
       const users = await query.orderBy(desc(schema.users.created_at));
@@ -1387,10 +1390,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const allowedFields = ['first_name', 'last_name', 'phone', 'bio', 'linkedin_url', 'profile_image', 'job_title', 'company', 'community_visible', 'email_visible'];
       const filteredUpdates = Object.keys(updates)
         .filter(key => allowedFields.includes(key))
-        .reduce((obj, key) => {
+        .reduce((obj: Record<string, any>, key) => {
           obj[key] = updates[key];
           return obj;
-        }, {});
+        }, {} as Record<string, any>);
       
       const user = await storage.updateUser(userId, filteredUpdates);
       res.json(user);
