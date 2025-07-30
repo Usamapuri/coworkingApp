@@ -3,6 +3,12 @@ import { registerRoutes } from './routes.js';
 
 const app = express();
 
+// Add JSON body parser middleware
+app.use(express.json());
+
+// Add URL-encoded body parser middleware for form data
+app.use(express.urlencoded({ extended: true }));
+
 // Initialize server
 async function initializeServer() {
   // Register all routes
