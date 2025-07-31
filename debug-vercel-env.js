@@ -27,6 +27,12 @@ if (process.env.POSTGRES_URL) {
   console.error('❌ POSTGRES_URL is not set');
 }
 
+// Check if DATABASE_URL still exists (old variable)
+if (process.env.DATABASE_URL) {
+  console.error('❌ DATABASE_URL still exists - this might be causing conflicts!');
+  console.log('🔗 DATABASE_URL value:', process.env.DATABASE_URL);
+}
+
 // Check other important variables
 console.log('\n📋 Other Environment Variables:');
 console.log('SESSION_SECRET:', process.env.SESSION_SECRET ? '✅ Set' : '❌ Not set');
@@ -35,4 +41,13 @@ console.log('NODE_ENV:', process.env.NODE_ENV || '❌ Not set');
 console.log('\n🎯 If you see "api.pooler.supabase.com", you need to:');
 console.log('1. Delete ALL existing POSTGRES_URL variables in Vercel');
 console.log('2. Add the correct one with "aws-0-us-east-1.pooler.supabase.com"');
-console.log('3. Redeploy your application'); 
+console.log('3. Redeploy your application');
+
+console.log('\n🔧 Quick Fix Steps:');
+console.log('1. Go to Vercel Dashboard → Your Project → Settings → Environment Variables');
+console.log('2. Delete any existing POSTGRES_URL or DATABASE_URL variables');
+console.log('3. Add new POSTGRES_URL with this exact value:');
+console.log('   postgres://postgres.dtwrnpoqfvensnrvchkr:calmkaaj7874@aws-0-us-east-1.pooler.supabase.com:6543/postgres?sslmode=require&supa=base-pooler.x');
+console.log('4. Add SESSION_SECRET with a strong random string');
+console.log('5. Add NODE_ENV=production');
+console.log('6. Redeploy your application'); 
