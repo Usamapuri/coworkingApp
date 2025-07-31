@@ -36,7 +36,7 @@ Set these environment variables in your Vercel project:
 
 **Required:**
 ```
-DATABASE_URL=postgresql://postgres.dtwrnpoqfvensnrvchkr:8gVOFtb6Fsm7uHyT@aws-0-us-east-1.pooler.supabase.com:6543/postgres
+POSTGRES_URL=postgres://postgres.dtwrnpoqfvensnrvchkr:calmkaaj7874@aws-0-us-east-1.pooler.supabase.com:6543/postgres?sslmode=require&supa=base-pooler.x
 SESSION_SECRET=your-strong-secret-key-here
 NODE_ENV=production
 ```

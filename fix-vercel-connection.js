@@ -8,17 +8,17 @@ console.log('🔧 Vercel Database Connection Fix\n');
 
 async function fixVercelConnection() {
   console.log('📋 Current Environment Variables:');
-  console.log('DATABASE_URL exists:', !!process.env.DATABASE_URL);
+  console.log('POSTGRES_URL exists:', !!process.env.POSTGRES_URL);
   console.log('NODE_ENV:', process.env.NODE_ENV);
   console.log('SESSION_SECRET exists:', !!process.env.SESSION_SECRET);
   
-  if (!process.env.DATABASE_URL) {
-    console.error('\n❌ DATABASE_URL is not set in Vercel environment variables!');
+  if (!process.env.POSTGRES_URL) {
+    console.error('\n❌ POSTGRES_URL is not set in Vercel environment variables!');
     console.log('\n🔧 To fix this:');
     console.log('1. Go to your Vercel dashboard');
     console.log('2. Select project: coworking-app-ywpo');
     console.log('3. Go to Settings → Environment Variables');
-    console.log('4. Add DATABASE_URL with your Supabase connection string');
+    console.log('4. Add POSTGRES_URL with your Supabase connection string');
     console.log('\n📋 Get your connection string from Supabase:');
     console.log('1. Go to https://supabase.com/dashboard');
     console.log('2. Select your project');
@@ -27,7 +27,7 @@ async function fixVercelConnection() {
     return;
   }
 
-  const currentUrl = process.env.DATABASE_URL;
+  const currentUrl = process.env.POSTGRES_URL;
   console.log('\n🔗 Current connection string format:');
   console.log('Contains "pooler":', currentUrl.includes('pooler'));
   console.log('Contains "aws-0":', currentUrl.includes('aws-0'));
@@ -61,7 +61,7 @@ async function fixVercelConnection() {
       console.log('Result:', result);
       
       console.log('\n💡 SOLUTION: Use direct connection instead of pooler');
-      console.log('Update your Vercel DATABASE_URL to:');
+      console.log('Update your Vercel POSTGRES_URL to:');
       console.log(directUrl);
       return;
     } catch (error) {
@@ -82,7 +82,7 @@ async function fixVercelConnection() {
       console.log('Result:', result);
       
       console.log('\n💡 SOLUTION: Use pooler connection');
-      console.log('Update your Vercel DATABASE_URL to:');
+      console.log('Update your Vercel POSTGRES_URL to:');
       console.log(poolerUrl);
       return;
     } catch (error) {
@@ -100,7 +100,7 @@ async function fixVercelConnection() {
     console.log('Result:', result);
     
     console.log('\n💡 SOLUTION: Add connection parameters');
-    console.log('Update your Vercel DATABASE_URL to:');
+    console.log('Update your Vercel POSTGRES_URL to:');
     console.log(paramUrl);
     return;
   } catch (error) {

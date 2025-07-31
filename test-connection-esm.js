@@ -10,32 +10,32 @@ async function testSupabaseConnection() {
     console.log('Testing Supabase connection...');
     
     // Test with a sample connection string format
-    const sampleConnectionString = 'postgresql://postgres.[project-ref]:[password]@aws-0-[region].pooler.supabase.com:6543/postgres';
+    const sampleConnectionString = 'postgres://postgres.dtwrnpoqfvensnrvchkr:calmkaaj7874@aws-0-us-east-1.pooler.supabase.com:6543/postgres?sslmode=require&supa=base-pooler.x';
     console.log('Expected format:', sampleConnectionString);
     
-    if (!process.env.DATABASE_URL) {
-      console.error('❌ DATABASE_URL environment variable is not set!');
+    if (!process.env.POSTGRES_URL) {
+      console.error('❌ POSTGRES_URL environment variable is not set!');
       console.log('Please set it in Vercel environment variables');
       return false;
     }
     
-    console.log('✅ DATABASE_URL is set');
-    console.log('Connection string starts with:', process.env.DATABASE_URL.substring(0, 50) + '...');
+    console.log('✅ POSTGRES_URL is set');
+    console.log('Connection string starts with:', process.env.POSTGRES_URL.substring(0, 50) + '...');
     
     // Check if it's a valid Supabase connection string
-    if (!process.env.DATABASE_URL.includes('supabase.com')) {
+    if (!process.env.POSTGRES_URL.includes('supabase.com')) {
       console.error('❌ Connection string does not contain supabase.com');
       return false;
     }
     
-    if (!process.env.DATABASE_URL.includes('pooler.supabase.com')) {
+    if (!process.env.POSTGRES_URL.includes('pooler.supabase.com')) {
       console.warn('⚠️  Connection string might not be using the pooler (recommended for Vercel)');
     }
     
     console.log('✅ Connection string format looks correct');
     
     // Try to connect
-    const sql = neon(process.env.DATABASE_URL);
+    const sql = neon(process.env.POSTGRES_URL);
     const result = await sql`SELECT 1 as test`;
     console.log('✅ Database connection successful!');
     console.log('Test query result:', result);

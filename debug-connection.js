@@ -5,14 +5,14 @@ async function debugConnection() {
   console.log('🔍 Debugging Supabase connection...\n');
   
   // Check environment variable
-  if (!process.env.DATABASE_URL) {
-    console.error('❌ DATABASE_URL is not set!');
+  if (!process.env.POSTGRES_URL) {
+    console.error('❌ POSTGRES_URL is not set!');
     console.log('Please set it in Vercel environment variables');
     return;
   }
   
-  console.log('✅ DATABASE_URL is set');
-  const connStr = process.env.DATABASE_URL;
+  console.log('✅ POSTGRES_URL is set');
+  const connStr = process.env.POSTGRES_URL;
   
   // Analyze connection string
   console.log('\n📋 Connection String Analysis:');

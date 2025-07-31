@@ -6,15 +6,15 @@ dotenv.config();
 
 console.log('🔍 Quick Database Connection Test\n');
 
-if (!process.env.DATABASE_URL) {
-  console.error('❌ DATABASE_URL is not set');
+if (!process.env.POSTGRES_URL) {
+  console.error('❌ POSTGRES_URL is not set');
   process.exit(1);
 }
 
 console.log('Testing connection...');
 
 try {
-  const sql = neon(process.env.DATABASE_URL);
+  const sql = neon(process.env.POSTGRES_URL);
   const result = await sql`SELECT 1 as test, NOW() as current_time`;
   console.log('✅ SUCCESS! Database connection working!');
   console.log('Result:', result);

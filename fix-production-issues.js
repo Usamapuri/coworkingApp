@@ -21,11 +21,11 @@ async function fixProductionIssues() {
   const issues = [];
   const fixes = [];
   
-  if (!process.env.DATABASE_URL) {
-    issues.push('❌ DATABASE_URL is not set');
-    fixes.push('Set DATABASE_URL in your environment variables');
+  if (!process.env.POSTGRES_URL) {
+    issues.push('❌ POSTGRES_URL is not set');
+    fixes.push('Set POSTGRES_URL in your environment variables');
   } else {
-    console.log('✅ DATABASE_URL is configured');
+    console.log('✅ POSTGRES_URL is configured');
   }
   
   if (!process.env.SESSION_SECRET || process.env.SESSION_SECRET === 'your-secret-key-here') {
@@ -45,7 +45,7 @@ async function fixProductionIssues() {
   // Test database connection
   console.log('\n🗄️ Testing database connection...');
   try {
-    const sql = neon(process.env.DATABASE_URL);
+    const sql = neon(process.env.POSTGRES_URL);
     const result = await sql`SELECT 1 as test, NOW() as current_time`;
     console.log('✅ Database connection successful!');
     console.log('Test result:', result);
@@ -57,7 +57,7 @@ async function fixProductionIssues() {
   // Check if sessions table exists
   console.log('\n📊 Checking sessions table...');
   try {
-    const sql = neon(process.env.DATABASE_URL);
+    const sql = neon(process.env.POSTGRES_URL);
     const result = await sql`
       SELECT EXISTS (
         SELECT FROM information_schema.tables 
@@ -87,7 +87,7 @@ async function fixProductionIssues() {
     console.log('\n📝 Environment Variables Template:');
     console.log(`
 # Required for production
-DATABASE_URL=postgresql://postgres.dtwrnpoqfvensnrvchkr:8gVOFtb6Fsm7uHyT@aws-0-us-east-1.pooler.supabase.com:6543/postgres
+POSTGRES_URL=postgres://postgres.dtwrnpoqfvensnrvchkr:calmkaaj7874@aws-0-us-east-1.pooler.supabase.com:6543/postgres?sslmode=require&supa=base-pooler.x
 SESSION_SECRET=your-strong-secret-key-here
 NODE_ENV=production
 

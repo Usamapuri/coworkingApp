@@ -27,7 +27,7 @@ Create a `.env` file in the root directory with the following content:
 
 ```env
 # Database Configuration
-DATABASE_URL=postgresql://postgres.[project-ref]:[password]@aws-0-[region].pooler.supabase.com:6543/postgres
+POSTGRES_URL=postgres://postgres.dtwrnpoqfvensnrvchkr:calmkaaj7874@aws-0-us-east-1.pooler.supabase.com:6543/postgres?sslmode=require&supa=base-pooler.x
 
 # Session Configuration
 SESSION_SECRET=your-secret-key-here
@@ -131,7 +131,7 @@ For production deployment on Vercel:
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `DATABASE_URL` | Yes | Supabase PostgreSQL connection string |
+| `POSTGRES_URL` | Yes | Supabase PostgreSQL connection string |
 | `SESSION_SECRET` | Yes | Secret key for session encryption |
 | `SENDGRID_API_KEY` | No | API key for email notifications |
 | `FROM_EMAIL` | No | Default sender email address |

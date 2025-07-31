@@ -7,13 +7,13 @@ dotenv.config();
 console.log('🔧 Fixing Sessions Table\n');
 
 async function fixSessionsTable() {
-  if (!process.env.DATABASE_URL) {
-    console.error('❌ DATABASE_URL is not set');
+  if (!process.env.POSTGRES_URL) {
+    console.error('❌ POSTGRES_URL is not set');
     return;
   }
 
   try {
-    const sql = neon(process.env.DATABASE_URL);
+    const sql = neon(process.env.POSTGRES_URL);
     
     // Check if sessions table exists
     console.log('📊 Checking if sessions table exists...');

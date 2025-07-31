@@ -7,12 +7,12 @@ dotenv.config();
 async function testAlternativeConnections() {
   console.log('🔧 Testing Alternative Connection Methods\n');
   
-  if (!process.env.DATABASE_URL) {
-    console.error('❌ DATABASE_URL is not set');
+  if (!process.env.POSTGRES_URL) {
+    console.error('❌ POSTGRES_URL is not set');
     return;
   }
   
-  const originalUrl = process.env.DATABASE_URL;
+  const originalUrl = process.env.POSTGRES_URL;
   console.log('Original connection string:', originalUrl.substring(0, 50) + '...');
   
   // Test 1: Try with different timeout
@@ -81,7 +81,7 @@ async function testAlternativeConnections() {
     console.log('✅ Direct connection successful!');
     console.log('Result:', result);
     console.log('\n💡 Solution: Use direct connection instead of pooler');
-    console.log('Update your DATABASE_URL to use the direct connection string');
+    console.log('Update your POSTGRES_URL to use the direct connection string');
     return true;
   } catch (error) {
     console.error('❌ Direct connection failed:', error.message);

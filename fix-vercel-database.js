@@ -7,7 +7,7 @@ console.log('🔧 Vercel Database Connection Fix\n');
 
 console.log('✅ GOOD NEWS:');
 console.log('You\'ve updated your database password to: calmkaaj7874');
-console.log('The DATABASE_URL has been updated in Vercel.\n');
+console.log('The POSTGRES_URL has been updated in Vercel.\n');
 
 console.log('⚠️  ISSUE DETECTED:');
 console.log('Your current connection string uses DIRECT connection:');
@@ -16,7 +16,7 @@ console.log('');
 console.log('For Vercel deployments, you should use POOLER connection instead.\n');
 
 console.log('✅ RECOMMENDED SOLUTION:');
-console.log('Update your DATABASE_URL in Vercel to use the pooler connection:\n');
+console.log('Update your POSTGRES_URL in Vercel to use the pooler connection:\n');
 
 console.log('🔗 CORRECT POOLER CONNECTION STRING:');
 console.log('postgresql://postgres.dtwrnpoqfvensnrvchkr:calmkaaj7874@aws-0-us-east-1.pooler.supabase.com:6543/postgres\n');
@@ -25,7 +25,7 @@ console.log('📋 STEPS TO UPDATE:');
 console.log('1. Go to your Vercel dashboard: https://vercel.com/dashboard');
 console.log('2. Select your project: coworking-app-ywpo');
 console.log('3. Go to Settings → Environment Variables');
-console.log('4. Find the DATABASE_URL variable');
+console.log('4. Find the POSTGRES_URL variable');
 console.log('5. Replace the current value with the pooler connection string above\n');
 
 console.log('🔍 KEY DIFFERENCES:');

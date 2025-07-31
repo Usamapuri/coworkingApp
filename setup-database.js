@@ -19,7 +19,7 @@ if (!envExists) {
   
   const envContent = `# Database Configuration
 # Replace with your actual Supabase connection string
-DATABASE_URL=postgresql://postgres.[project-ref]:[password]@aws-0-[region].pooler.supabase.com:6543/postgres
+POSTGRES_URL=postgres://postgres.dtwrnpoqfvensnrvchkr:calmkaaj7874@aws-0-us-east-1.pooler.supabase.com:6543/postgres?sslmode=require&supa=base-pooler.x
 
 # Session Configuration
 SESSION_SECRET=your-secret-key-here
@@ -38,7 +38,7 @@ NODE_ENV=development
 
   fs.writeFileSync(envPath, envContent);
   console.log('✅ .env file created successfully!');
-  console.log('⚠️  Please update the DATABASE_URL with your actual Supabase connection string\n');
+  console.log('⚠️  Please update the POSTGRES_URL with your actual Supabase connection string\n');
 } else {
   console.log('✅ .env file already exists');
 }
@@ -49,22 +49,22 @@ dotenv.config();
 
 // Test database connection
 async function testConnection() {
-  if (!process.env.DATABASE_URL) {
-    console.error('❌ DATABASE_URL is not set in .env file');
+  if (!process.env.POSTGRES_URL) {
+    console.error('❌ POSTGRES_URL is not set in .env file');
     console.log('\n📋 To fix this:');
     console.log('1. Go to your Supabase project dashboard');
     console.log('2. Navigate to Settings > Database');
     console.log('3. Copy the connection string (use the pooler connection for better reliability)');
-    console.log('4. Update the DATABASE_URL in your .env file');
+    console.log('4. Update the POSTGRES_URL in your .env file');
     console.log('\nExample format:');
-    console.log('DATABASE_URL=postgresql://postgres.[project-ref]:[password]@aws-0-[region].pooler.supabase.com:6543/postgres');
+    console.log('POSTGRES_URL=postgres://postgres.dtwrnpoqfvensnrvchkr:calmkaaj7874@aws-0-us-east-1.pooler.supabase.com:6543/postgres?sslmode=require&supa=base-pooler.x');
     return false;
   }
 
   console.log('🔍 Testing database connection...');
   
   try {
-    const sql = neon(process.env.DATABASE_URL);
+    const sql = neon(process.env.POSTGRES_URL);
     const result = await sql`SELECT 1 as test, NOW() as current_time`;
     console.log('✅ Database connection successful!');
     console.log('Test result:', result);

@@ -11,19 +11,19 @@ async function diagnoseConnection() {
   
   // Check environment variables
   console.log('📋 Environment Variables:');
-  console.log('DATABASE_URL exists:', !!process.env.DATABASE_URL);
-  if (process.env.DATABASE_URL) {
-    console.log('Connection string starts with:', process.env.DATABASE_URL.substring(0, 50) + '...');
+  console.log('POSTGRES_URL exists:', !!process.env.POSTGRES_URL);
+  if (process.env.POSTGRES_URL) {
+    console.log('Connection string starts with:', process.env.POSTGRES_URL.substring(0, 50) + '...');
   }
   
   // Parse connection string
-  if (!process.env.DATABASE_URL) {
-    console.error('❌ DATABASE_URL is not set');
+  if (!process.env.POSTGRES_URL) {
+    console.error('❌ POSTGRES_URL is not set');
     return;
   }
   
   try {
-    const url = new URL(process.env.DATABASE_URL);
+    const url = new URL(process.env.POSTGRES_URL);
     console.log('\n🔗 Connection String Analysis:');
     console.log('Protocol:', url.protocol);
     console.log('Hostname:', url.hostname);
@@ -66,7 +66,7 @@ async function diagnoseConnection() {
     // Test actual database connection
     console.log('\n🗄️ Testing actual database connection...');
     try {
-      const sql = neon(process.env.DATABASE_URL);
+      const sql = neon(process.env.POSTGRES_URL);
       const result = await sql`SELECT 1 as test, NOW() as current_time, version() as pg_version`;
       console.log('✅ Database connection successful!');
       console.log('Test result:', result);

@@ -1,78 +1,47 @@
 import dotenv from 'dotenv';
 
+console.log('🔍 Vercel Environment Variables Check\n');
+
 // Load environment variables
 dotenv.config();
 
-console.log('🔍 Vercel Environment Variables Check\n');
-
 console.log('📋 Current Environment Variables:');
-console.log('================================');
+console.log('POSTGRES_URL exists:', !!process.env.POSTGRES_URL);
+console.log('SESSION_SECRET exists:', !!process.env.SESSION_SECRET);
+console.log('NODE_ENV:', process.env.NODE_ENV);
 
-// Check required variables
-const requiredVars = [
-  'DATABASE_URL',
-  'SESSION_SECRET', 
-  'NODE_ENV'
-];
-
-const optionalVars = [
-  'SENDGRID_API_KEY',
-  'FROM_EMAIL',
-  'VAPID_PUBLIC_KEY',
-  'VAPID_PRIVATE_KEY'
-];
-
-console.log('✅ Required Variables:');
-requiredVars.forEach(varName => {
-  const value = process.env[varName];
-  if (value) {
-    if (varName === 'DATABASE_URL') {
-      console.log(`  ${varName}: ${value.substring(0, 50)}...`);
-    } else if (varName === 'SESSION_SECRET') {
-      const isPlaceholder = value === 'your-secret-key-here' || value === 'your-strong-secret-key-here';
-      console.log(`  ${varName}: ${isPlaceholder ? '❌ PLACEHOLDER VALUE' : '✅ SET'}`);
+if (process.env.POSTGRES_URL) {
+  const dbUrl = process.env.POSTGRES_URL;
+  console.log('\n🔗 POSTGRES_URL Analysis:');
+  console.log('URL length:', dbUrl.length);
+  
+  // Extract hostname from URL
+  const urlMatch = dbUrl.match(/@([^:]+):(\d+)/);
+  if (urlMatch) {
+    const hostname = urlMatch[1];
+    const port = urlMatch[2];
+    console.log('Hostname:', hostname);
+    console.log('Port:', port);
+    
+    if (hostname.includes('api.')) {
+      console.error('\n❌ PROBLEM: Hostname contains "api." which is incorrect!');
+      console.log('Current hostname:', hostname);
+      console.log('Should be: db.dtwrnpoqfvensnrvchkr.supabase.co');
+    } else if (hostname.includes('db.dtwrnpoqfvensnrvchkr')) {
+      console.log('\n✅ Hostname looks correct!');
     } else {
-      console.log(`  ${varName}: ${value}`);
+      console.log('\n⚠️ Hostname format unknown:', hostname);
     }
-  } else {
-    console.log(`  ${varName}: ❌ NOT SET`);
   }
-});
-
-console.log('\n📋 Optional Variables:');
-optionalVars.forEach(varName => {
-  const value = process.env[varName];
-  if (value) {
-    console.log(`  ${varName}: ✅ SET`);
-  } else {
-    console.log(`  ${varName}: ⚪ NOT SET (optional)`);
-  }
-});
-
-console.log('\n🔧 Environment Status:');
-if (process.env.NODE_ENV === 'production') {
-  console.log('✅ NODE_ENV is set to production');
+  
+  console.log('\n📋 RECOMMENDED Vercel Environment Variables:');
+  console.log('POSTGRES_URL=postgresql://postgres:calmkaaj7874@db.dtwrnpoqfvensnrvchkr.supabase.co:5432/postgres');
+  console.log('SESSION_SECRET=d38ba1fd561b6f4f0211c1d72a39630c6b50ded4fda1ad2a9049c0bd81b3cb2781addde868fbf6fe4515d9b7fc6ab0145647c1d6c21b9ed6e96bb7aab23e7015');
+  console.log('NODE_ENV=production');
 } else {
-  console.log('❌ NODE_ENV is not set to production');
-  console.log('   Current value:', process.env.NODE_ENV || 'undefined');
-}
-
-if (process.env.SESSION_SECRET && 
-    process.env.SESSION_SECRET !== 'your-secret-key-here' && 
-    process.env.SESSION_SECRET !== 'your-strong-secret-key-here') {
-  console.log('✅ SESSION_SECRET is properly configured');
-} else {
-  console.log('❌ SESSION_SECRET is not properly configured');
-}
-
-if (process.env.DATABASE_URL) {
-  console.log('✅ DATABASE_URL is set');
-} else {
-  console.log('❌ DATABASE_URL is not set');
-}
-
-console.log('\n📝 Next Steps:');
-console.log('1. If any required variables show ❌, set them in Vercel dashboard');
-console.log('2. Make sure NODE_ENV=production in Vercel');
-console.log('3. Use a strong SESSION_SECRET (not placeholder)');
-console.log('4. Redeploy after setting environment variables'); 
+  console.error('\n❌ POSTGRES_URL is not set!');
+  console.log('\n📋 Set these in Vercel:');
+  console.log('POSTGRES_URL=postgresql://postgres:calmkaaj7874@db.dtwrnpoqfvensnrvchkr.supabase.co:5432/postgres');
+  console.log('SESSION_SECRET=d38ba1fd561b6f4f0211c1d72a39630c6b50ded4fda1ad2a9049c0bd81b3cb2781addde868fbf6fe4515d9b7fc6ab0145647c1d6c21b9ed6e96bb7aab23e7015');
+  console.log('NODE_ENV=production');
+} 
