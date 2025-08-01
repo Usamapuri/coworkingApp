@@ -65,6 +65,18 @@ passport.use(
     async (email, password, done) => {
       try {
         console.log('Attempting login for email:', email);
+        
+        // DEBUG: Log environment variables before database call
+        console.log('🔍 DEBUG: Environment variables before getUserByEmail:');
+        console.log('DATABASE_URL:', process.env.DATABASE_URL ? 'SET' : 'NOT SET');
+        console.log('POSTGRES_URL:', process.env.POSTGRES_URL ? 'SET' : 'NOT SET');
+        if (process.env.DATABASE_URL) {
+          console.log('DATABASE_URL starts with:', process.env.DATABASE_URL.substring(0, 50) + '...');
+        }
+        if (process.env.POSTGRES_URL) {
+          console.log('POSTGRES_URL starts with:', process.env.POSTGRES_URL.substring(0, 50) + '...');
+        }
+        
         const user = await storage.getUserByEmail(email);
         if (!user) {
           console.log('User not found for email:', email);
