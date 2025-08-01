@@ -175,12 +175,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Configure session store for production
   let sessionStore = undefined;
-  if (process.env.NODE_ENV === 'production' && process.env.POSTGRES_URL) {
+  if (process.env.NODE_ENV === 'production' && (process.env.DATABASE_URL || process.env.POSTGRES_URL)) {
     try {
       const PostgresStore = pgSession(session);
       sessionStore = new PostgresStore({
         conObject: {
-          connectionString: process.env.POSTGRES_URL,
+          connectionString: process.env.DATABASE_URL || process.env.POSTGRES_URL!,
           ssl: { rejectUnauthorized: false }
         },
         tableName: 'sessions'
