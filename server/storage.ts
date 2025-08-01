@@ -7,8 +7,26 @@ import dotenv from "dotenv";
 // Load environment variables
 dotenv.config();
 
-// Force check environment variables
+// Debug environment variables
+console.log('🔍 DEBUGGING DEPLOYMENT ENVIRONMENT VARIABLES');
+console.log('============================================');
+
+// Log all environment variables
+console.log('\n📋 ALL ENVIRONMENT VARIABLES:');
+Object.keys(process.env).forEach(key => {
+  const value = process.env[key];
+  if (value && (key.includes('DATABASE') || key.includes('POSTGRES') || key.includes('SUPABASE'))) {
+    console.log(`${key}: ${value.substring(0, 50)}...`);
+  }
+});
+
+// Check specific database URLs
+console.log('\n🔗 DATABASE URLS:');
 const databaseUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL!;
+console.log('DATABASE_URL:', process.env.DATABASE_URL ? process.env.DATABASE_URL.substring(0, 50) + '...' : 'NOT SET');
+console.log('POSTGRES_URL:', process.env.POSTGRES_URL ? process.env.POSTGRES_URL.substring(0, 50) + '...' : 'NOT SET');
+console.log('🎯 URL BEING USED:', databaseUrl.substring(0, 50) + '...');
+
 if (databaseUrl.includes('api.pooler.supabase.com')) {
   console.error('❌ ERROR: Using OLD hostname! Vercel environment variables not updated!');
   console.error('🔧 Please update your Vercel environment variables to use DATABASE_URL with aws-0-us-east-1.pooler.supabase.com');
