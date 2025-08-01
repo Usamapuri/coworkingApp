@@ -7,6 +7,11 @@ import dotenv from "dotenv";
 // Load environment variables
 dotenv.config();
 
+// CRITICAL DEBUG - This MUST show in logs
+console.log('🚨 CRITICAL DEBUG - STORAGE.TS LOADED');
+console.log('🚨 CRITICAL DEBUG - STORAGE.TS LOADED');
+console.log('🚨 CRITICAL DEBUG - STORAGE.TS LOADED');
+
 // Debug environment variables
 console.log('🔍 DEBUGGING DEPLOYMENT ENVIRONMENT VARIABLES');
 console.log('============================================');

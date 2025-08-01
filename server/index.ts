@@ -1,6 +1,10 @@
 import express from 'express';
 import { registerRoutes } from './routes.js';
 
+// CRITICAL DEBUG - Server starting
+console.log('🚨 CRITICAL DEBUG - SERVER INDEX.TS LOADED');
+console.log('🚨 CRITICAL DEBUG - SERVER INDEX.TS LOADED');
+
 const app = express();
 
 // Add JSON body parser middleware
