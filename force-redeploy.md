@@ -1,45 +1,20 @@
-# Force Fresh Deployment Guide
+# Force Redeploy - Database Connection Fix
 
-## The Problem
-Your Vercel deployment is "Ready" but still using the old environment variables with the wrong hostname (`api.dtwrnpoqfvensnrvchkr.supabase.co` instead of `db.dtwrnpoqfvensnrvchkr.supabase.co`).
+This file was created to trigger a Vercel redeploy with the correct database environment variables.
 
-## Solution: Force a Fresh Deployment
+## Issue
+- Vercel deployment was using old database URL: `api.pooler.supabase.com`
+- Correct URL: `aws-0-us-east-1.pooler.supabase.com`
+- Environment variables have been updated in Vercel dashboard
 
-### Step 1: Verify Environment Variables
-1. Go to **Vercel Dashboard** → **Settings** → **Environment Variables**
-2. Confirm `DATABASE_URL` is set to:
-   ```
-   postgresql://postgres:calmkaaj7874@db.dtwrnpoqfvensnrvchkr.supabase.co:5432/postgres
-   ```
+## Solution
+- Updated local .env file with correct Supabase project details
+- Vercel environment variables are now correct
+- This commit will trigger a new deployment
 
-### Step 2: Force Redeploy
-**Option A: Via Git Push**
-```bash
-# Make a small change to trigger deployment
-echo "# Force redeploy" >> README.md
-git add README.md
-git commit -m "Force redeploy with correct environment variables"
-git push origin main
-```
+## Next Steps
+1. Commit this file
+2. Push to trigger Vercel redeploy
+3. Test login functionality
 
-**Option B: Via Vercel Dashboard**
-1. Go to **Deployments** tab
-2. Click **"Redeploy"** on the latest deployment
-3. Or go to **Settings** → **General** → **Redeploy**
-
-### Step 3: Wait for New Deployment
-- Watch the **Deployments** tab for a new deployment
-- Make sure it shows **"Ready"** status
-- The deployment should use the updated environment variables
-
-### Step 4: Test Login
-Once the new deployment is ready, try logging in again.
-
-## Why This Happens
-Vercel sometimes caches environment variables or uses cached deployments. A fresh deployment ensures the latest environment variables are used.
-
-## Alternative: Check Runtime Logs
-If the issue persists:
-1. Go to **Runtime Logs** in your deployment
-2. Look for the actual error messages
-3. Verify which hostname is being used in the logs 
+Created: $(date) 
