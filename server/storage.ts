@@ -25,11 +25,25 @@ Object.keys(process.env).forEach(key => {
   }
 });
 
-// Check specific database URLs
+// FORCE ONLY DATABASE_URL - IGNORE POSTGRES_URL COMPLETELY
 console.log('\n🔗 DATABASE URLS:');
-const databaseUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL!;
 console.log('DATABASE_URL:', process.env.DATABASE_URL ? process.env.DATABASE_URL.substring(0, 50) + '...' : 'NOT SET');
-console.log('POSTGRES_URL:', process.env.POSTGRES_URL ? process.env.POSTGRES_URL.substring(0, 50) + '...' : 'NOT SET');
+console.log('POSTGRES_URL:', process.env.POSTGRES_URL ? 'IGNORED - DELETING FROM ENV' : 'NOT SET');
+
+// Delete POSTGRES_URL from process.env to prevent any fallback
+if (process.env.POSTGRES_URL) {
+  console.log('🗑️ DELETING POSTGRES_URL FROM ENVIRONMENT TO PREVENT FALLBACK');
+  delete process.env.POSTGRES_URL;
+}
+
+// ONLY use DATABASE_URL
+const databaseUrl = process.env.DATABASE_URL;
+if (!databaseUrl) {
+  console.error('❌ CRITICAL ERROR: DATABASE_URL is not set!');
+  console.error('🔧 Please set DATABASE_URL in your Vercel environment variables');
+  throw new Error('DATABASE_URL is required but not set');
+}
+
 console.log('🎯 URL BEING USED:', databaseUrl.substring(0, 50) + '...');
 
 if (databaseUrl.includes('api.pooler.supabase.com')) {
@@ -39,6 +53,8 @@ if (databaseUrl.includes('api.pooler.supabase.com')) {
 }
 
 console.log('✅ Using database URL:', databaseUrl.substring(0, 50) + '...');
+
+// Create neon client with explicit URL
 const sql_client = neon(databaseUrl);
 export const db = drizzle(sql_client, { schema });
 

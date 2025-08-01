@@ -69,12 +69,8 @@ passport.use(
         // DEBUG: Log environment variables before database call
         console.log('🔍 DEBUG: Environment variables before getUserByEmail:');
         console.log('DATABASE_URL:', process.env.DATABASE_URL ? 'SET' : 'NOT SET');
-        console.log('POSTGRES_URL:', process.env.POSTGRES_URL ? 'SET' : 'NOT SET');
         if (process.env.DATABASE_URL) {
           console.log('DATABASE_URL starts with:', process.env.DATABASE_URL.substring(0, 50) + '...');
-        }
-        if (process.env.POSTGRES_URL) {
-          console.log('POSTGRES_URL starts with:', process.env.POSTGRES_URL.substring(0, 50) + '...');
         }
         
         const user = await storage.getUserByEmail(email);
@@ -187,12 +183,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Configure session store for production
   let sessionStore = undefined;
-  if (process.env.NODE_ENV === 'production' && (process.env.DATABASE_URL || process.env.POSTGRES_URL)) {
+  if (process.env.NODE_ENV === 'production' && process.env.DATABASE_URL) {
     try {
       const PostgresStore = pgSession(session);
       sessionStore = new PostgresStore({
         conObject: {
-          connectionString: process.env.DATABASE_URL || process.env.POSTGRES_URL!,
+          connectionString: process.env.DATABASE_URL,
           ssl: { rejectUnauthorized: false }
         },
         tableName: 'sessions'
