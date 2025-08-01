@@ -45,3 +45,51 @@ if (process.env.POSTGRES_URL) {
   console.log('SESSION_SECRET=d38ba1fd561b6f4f0211c1d72a39630c6b50ded4fda1ad2a9049c0bd81b3cb2781addde868fbf6fe4515d9b7fc6ab0145647c1d6c21b9ed6e96bb7aab23e7015');
   console.log('NODE_ENV=production');
 } 
+
+// Check what environment variables Vercel is actually using
+console.log('🔍 CHECKING VERCEL ENVIRONMENT VARIABLES');
+console.log('=====================================');
+
+// Check all possible database URL variables
+const envVars = [
+  'DATABASE_URL',
+  'POSTGRES_URL', 
+  'POSTGRES_PRISMA_URL',
+  'POSTGRES_URL_NON_POOLING',
+  'SUPABASE_URL',
+  'NEXT_PUBLIC_SUPABASE_URL'
+];
+
+envVars.forEach(varName => {
+  const value = process.env[varName];
+  if (value) {
+    console.log(`✅ ${varName}: ${value.substring(0, 50)}...`);
+    
+    // Check if it contains the problematic hostname
+    if (value.includes('api.pooler.supabase.com')) {
+      console.log(`❌ WARNING: ${varName} contains OLD hostname!`);
+    }
+  } else {
+    console.log(`❌ ${varName}: NOT SET`);
+  }
+});
+
+console.log('\n🔍 CHECKING FOR HIDDEN ENVIRONMENT VARIABLES');
+console.log('===========================================');
+
+// Check if there are any other database-related variables
+Object.keys(process.env).forEach(key => {
+  if (key.toLowerCase().includes('database') || 
+      key.toLowerCase().includes('postgres') || 
+      key.toLowerCase().includes('supabase')) {
+    const value = process.env[key];
+    console.log(`${key}: ${value ? value.substring(0, 50) + '...' : 'NOT SET'}`);
+  }
+});
+
+console.log('\n🚨 IMMEDIATE ACTION REQUIRED:');
+console.log('============================');
+console.log('1. Go to your Vercel dashboard');
+console.log('2. Delete ALL database-related environment variables');
+console.log('3. Add ONLY DATABASE_URL with your correct Supabase URL');
+console.log('4. Force a new deployment'); 

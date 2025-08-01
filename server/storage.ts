@@ -7,7 +7,16 @@ import dotenv from "dotenv";
 // Load environment variables
 dotenv.config();
 
-const sql_client = neon(process.env.DATABASE_URL || process.env.POSTGRES_URL!);
+// Force check environment variables
+const databaseUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL!;
+if (databaseUrl.includes('api.pooler.supabase.com')) {
+  console.error('❌ ERROR: Using OLD hostname! Vercel environment variables not updated!');
+  console.error('🔧 Please update your Vercel environment variables to use DATABASE_URL with aws-0-us-east-1.pooler.supabase.com');
+  throw new Error('Invalid database URL - using old hostname');
+}
+
+console.log('✅ Using database URL:', databaseUrl.substring(0, 50) + '...');
+const sql_client = neon(databaseUrl);
 export const db = drizzle(sql_client, { schema });
 
 export interface IStorage {

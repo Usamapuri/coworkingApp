@@ -1,231 +1,40 @@
-// Force Fix Vercel - Complete Environment Reset
-import fetch from 'node-fetch';
+// Force Vercel to use correct environment variables
+// This script will be called during deployment to ensure we're using the right database URL
 
-const VERCEL_TOKEN = 'Jaczwo8wZC9kXEzfW32QTET8';
-const PROJECT_ID = 'prj_dEp2U0FLCAE7LNPuf16RFVuDK284';
-const API_BASE = 'https://api.vercel.com/v1';
+console.log('🚀 FORCE FIXING VERCEL ENVIRONMENT VARIABLES');
+console.log('==========================================');
 
-// Environment variables to set
-const ENV_VARS = {
-  POSTGRES_URL: 'postgres://postgres.dtwrnpoqfvensnrvchkr:calmkaaj7874@aws-0-us-east-1.pooler.supabase.com:6543/postgres?sslmode=require&supa=base-pooler.x',
-  SESSION_SECRET: 'calmkaaj-session-secret-2024-secure-key',
-  NODE_ENV: 'production'
-};
+// Get the correct Supabase URL from your environment
+const correctSupabaseUrl = 'https://awsqtnvjrdntwgnevqoz.supabase.co';
+const correctDatabaseUrl = `postgres://postgres.awsqtnvjrdntwgnevqoz:1pmrws0fbIJr2tUV@aws-0-us-east-1.pooler.supabase.com:6543/postgres?sslmode=require&supa=base-pooler.x`;
 
-async function testToken() {
-  console.log('🔍 Testing Vercel token...');
+console.log('✅ Correct Supabase URL:', correctSupabaseUrl);
+console.log('✅ Correct Database URL:', correctDatabaseUrl.substring(0, 50) + '...');
+
+// Check what we're actually getting
+const actualDatabaseUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+console.log('🔍 Actual Database URL:', actualDatabaseUrl ? actualDatabaseUrl.substring(0, 50) + '...' : 'NOT SET');
+
+if (actualDatabaseUrl && actualDatabaseUrl.includes('api.pooler.supabase.com')) {
+  console.log('❌ ERROR: Still using OLD hostname!');
+  console.log('🚨 Vercel is not using your environment variables!');
   
-  try {
-    const response = await fetch(`${API_BASE}/user`, {
-      headers: {
-        'Authorization': `Bearer ${VERCEL_TOKEN}`,
-        'Content-Type': 'application/json'
-      }
-    });
-    
-    if (response.ok) {
-      const user = await response.json();
-      console.log('✅ Token is valid!');
-      console.log(`👤 User: ${user.user?.name || 'Unknown'}`);
-      console.log(`📧 Email: ${user.user?.email || 'Unknown'}`);
-      return true;
-    } else {
-      console.error('❌ Token is invalid or expired');
-      return false;
-    }
-  } catch (error) {
-    console.error('❌ Error testing token:', error.message);
-    return false;
-  }
+  // Force exit with error to make deployment fail
+  process.exit(1);
+} else if (actualDatabaseUrl && actualDatabaseUrl.includes('aws-0-us-east-1.pooler.supabase.com')) {
+  console.log('✅ SUCCESS: Using correct hostname!');
+} else {
+  console.log('⚠️ WARNING: No database URL found or unexpected format');
 }
 
-async function getProjects() {
-  try {
-    const response = await fetch(`${API_BASE}/projects`, {
-      headers: {
-        'Authorization': `Bearer ${VERCEL_TOKEN}`,
-        'Content-Type': 'application/json'
-      }
-    });
-    
-    if (response.ok) {
-      const projects = await response.json();
-      return projects.projects || [];
-    } else {
-      console.error('❌ Failed to fetch projects');
-      return [];
-    }
-  } catch (error) {
-    console.error('❌ Error fetching projects:', error.message);
-    return [];
-  }
-}
-
-async function getCurrentEnvVars() {
-  const url = `${API_BASE}/projects/${PROJECT_ID}/env`;
-  
-  try {
-    const response = await fetch(url, {
-      headers: {
-        'Authorization': `Bearer ${VERCEL_TOKEN}`,
-        'Content-Type': 'application/json'
-      }
-    });
-    
-    if (!response.ok) {
-      throw new Error(`Failed to fetch env vars: ${response.status} ${response.statusText}`);
-    }
-    
-    const envVars = await response.json();
-    return envVars.envs || [];
-  } catch (error) {
-    console.error('❌ Error fetching current environment variables:', error.message);
-    return [];
-  }
-}
-
-async function deleteEnvVar(key) {
-  const url = `${API_BASE}/projects/${PROJECT_ID}/env/${key}`;
-  
-  try {
-    const response = await fetch(url, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${VERCEL_TOKEN}`,
-        'Content-Type': 'application/json'
-      }
-    });
-    
-    if (response.ok) {
-      console.log(`✅ Deleted ${key}`);
-      return true;
-    } else {
-      console.log(`⚠️  Could not delete ${key}: ${response.status}`);
-      return false;
-    }
-  } catch (error) {
-    console.log(`⚠️  Error deleting ${key}:`, error.message);
-    return false;
-  }
-}
-
-async function createEnvVar(key, value, environments = ['production', 'preview', 'development']) {
-  const url = `${API_BASE}/projects/${PROJECT_ID}/env`;
-  
-  try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${VERCEL_TOKEN}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        key,
-        value,
-        target: environments,
-        type: 'encrypted'
-      })
-    });
-    
-    if (response.ok) {
-      console.log(`✅ Created ${key}`);
-      return true;
-    } else {
-      const error = await response.text();
-      console.error(`❌ Failed to create ${key}: ${response.status} - ${error}`);
-      return false;
-    }
-  } catch (error) {
-    console.error(`❌ Error creating ${key}:`, error.message);
-    return false;
-  }
-}
-
-async function forceFixVercel() {
-  console.log('🔧 Force Fix Vercel - Complete Environment Reset\n');
-  
-  // Step 1: Test token
-  const tokenValid = await testToken();
-  if (!tokenValid) {
-    console.log('\n❌ Cannot proceed - token is invalid');
-    return;
-  }
-  
-  // Step 2: List projects to verify project ID
-  console.log('\n📋 Step 1: Verifying project access...');
-  const projects = await getProjects();
-  
-  if (projects.length === 0) {
-    console.log('❌ No projects found or access denied');
-    return;
-  }
-  
-  console.log(`✅ Found ${projects.length} projects`);
-  const targetProject = projects.find(p => p.id === PROJECT_ID);
-  
-  if (!targetProject) {
-    console.log('❌ Project not found. Available projects:');
-    projects.forEach(p => {
-      console.log(`- ${p.name} (${p.id})`);
-    });
-    return;
-  }
-  
-  console.log(`✅ Project found: ${targetProject.name}`);
-  
-  // Step 3: Get current environment variables
-  console.log('\n📋 Step 2: Fetching current environment variables...');
-  const currentVars = await getCurrentEnvVars();
-  
-  if (currentVars.length === 0) {
-    console.log('✅ No existing environment variables found');
-  } else {
-    console.log(`📝 Found ${currentVars.length} existing environment variables`);
-    currentVars.forEach(v => {
-      console.log(`- ${v.key}: ${v.value.substring(0, 50)}...`);
-    });
-  }
-  
-  // Step 4: Delete ALL environment variables (clean slate)
-  console.log('\n🗑️  Step 3: Deleting ALL environment variables...');
-  for (const envVar of currentVars) {
-    await deleteEnvVar(envVar.key);
-  }
-  
-  // Step 5: Create new environment variables
-  console.log('\n➕ Step 4: Creating new environment variables...');
-  let successCount = 0;
-  
-  for (const [key, value] of Object.entries(ENV_VARS)) {
-    const success = await createEnvVar(key, value);
-    if (success) successCount++;
-  }
-  
-  console.log(`\n📊 Environment Variables: ${successCount}/${Object.keys(ENV_VARS)} created successfully`);
-  
-  if (successCount === Object.keys(ENV_VARS).length) {
-    console.log('✅ All environment variables created successfully!');
-    
-    console.log('\n🎉 FORCE FIX COMPLETED!');
-    console.log('\n📋 What was done:');
-    console.log('1. ✅ Verified project access');
-    console.log('2. ✅ Deleted ALL existing environment variables');
-    console.log('3. ✅ Created correct POSTGRES_URL with aws-0-us-east-1.pooler.supabase.com');
-    console.log('4. ✅ Set SESSION_SECRET for secure sessions');
-    console.log('5. ✅ Set NODE_ENV=production');
-    
-    console.log('\n🔗 Next steps:');
-    console.log('1. Go to your Vercel dashboard');
-    console.log('2. Navigate to Deployments');
-    console.log('3. Click "Redeploy" on your latest deployment');
-    console.log('4. Or make a small change to trigger a new deployment');
-    
-    console.log('\n⏳ Your app should work after the next deployment!');
-  } else {
-    console.log('\n❌ Some environment variables failed to create');
-    console.log('Please check the errors above and try again');
-  }
-}
-
-// Run the force fix
-forceFixVercel().catch(console.error); 
+console.log('\n📋 NEXT STEPS:');
+console.log('==============');
+console.log('1. If you see "Still using OLD hostname" above:');
+console.log('   - Go to Vercel dashboard');
+console.log('   - Delete ALL environment variables');
+console.log('   - Add ONLY: DATABASE_URL=' + correctDatabaseUrl);
+console.log('   - Redeploy');
+console.log('');
+console.log('2. If you see "Using correct hostname" above:');
+console.log('   - Your environment variables are correct');
+console.log('   - The issue might be elsewhere'); 
