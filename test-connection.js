@@ -9,7 +9,7 @@ async function testConnection() {
   console.log('🔍 Testing database connection...\n');
   
   // Use the environment variable or fallback to the correct connection string
-  const dbUrl = process.env.POSTGRES_URL || 'postgres://postgres.dtwrnpoqfvensnrvchkr:calmkaaj7874@aws-0-us-east-1.pooler.supabase.com:6543/postgres?sslmode=require&supa=base-pooler.x';
+  const dbUrl = process.env.POSTGRES_URL || 'postgres://postgres.awsqtnvjrdntwgnevqoz:1pmrws0fbIJr2tUV@aws-0-us-east-1.pooler.supabase.com:6543/postgres?sslmode=require&supa=base-pooler.x';
   
   console.log('🔗 Using connection string:', dbUrl.substring(0, 50) + '...');
   
