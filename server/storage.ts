@@ -7,7 +7,7 @@ import dotenv from "dotenv";
 // Load environment variables
 dotenv.config();
 
-const sql_client = neon(process.env.POSTGRES_URL!);
+const sql_client = neon(process.env.DATABASE_URL || process.env.POSTGRES_URL!);
 export const db = drizzle(sql_client, { schema });
 
 export interface IStorage {
