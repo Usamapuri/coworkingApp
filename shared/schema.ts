@@ -24,6 +24,7 @@ export const organizations = pgTable("organizations", {
 // Users
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
+  auth_id: uuid("auth_id").unique(), // Link to Supabase auth
   email: text("email").notNull().unique(),
   password: text("password").notNull(),
   first_name: text("first_name").notNull(),
