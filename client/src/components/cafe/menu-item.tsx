@@ -1,7 +1,8 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/use-cart";
-import { Coffee } from "lucide-react";
+import { Coffee, Check } from "lucide-react";
+import { useState } from "react";
 
 interface MenuItemProps {
   item: {
@@ -16,6 +17,7 @@ interface MenuItemProps {
 
 export default function MenuItem({ item }: MenuItemProps) {
   const { addToCart } = useCart();
+  const [isAdded, setIsAdded] = useState(false);
 
   const handleAddToCart = () => {
     addToCart({
@@ -25,6 +27,8 @@ export default function MenuItem({ item }: MenuItemProps) {
       quantity: 1,
       image_url: item.image_url,
     });
+    setIsAdded(true);
+    setTimeout(() => setIsAdded(false), 1500); // Reset after 1.5 seconds
   };
 
   return (
@@ -55,9 +59,17 @@ export default function MenuItem({ item }: MenuItemProps) {
         <p className="text-gray-600 text-sm mb-4">{item.description}</p>
         <Button
           onClick={handleAddToCart}
-          className="w-full bg-primary hover:bg-blue-700 text-white"
+          className={`w-full ${isAdded ? 'bg-green-600 hover:bg-green-700' : 'bg-primary hover:bg-blue-700'} text-white transition-colors`}
+          disabled={isAdded}
         >
-          Add to Cart
+          {isAdded ? (
+            <span className="flex items-center justify-center">
+              <Check className="w-4 h-4 mr-2" />
+              Added to Cart
+            </span>
+          ) : (
+            'Add to Cart'
+          )}
         </Button>
       </CardContent>
     </Card>

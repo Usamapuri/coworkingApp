@@ -1,9 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Coffee, Calendar, MoreHorizontal, Utensils } from "lucide-react";
+import { Coffee, Calendar, MoreHorizontal, Utensils, ArrowRight } from "lucide-react";
 import { CafeOrder, MeetingBooking } from "@/lib/types";
 import { ORDER_STATUSES } from "@/lib/constants";
+import { useNavigate } from "react-router-dom";
 
 interface RecentActivityProps {
   recentOrders: CafeOrder[];
@@ -11,6 +12,8 @@ interface RecentActivityProps {
 }
 
 export default function RecentActivity({ recentOrders, recentBookings }: RecentActivityProps) {
+  const navigate = useNavigate();
+  
   const getStatusColor = (status: string) => {
     switch (status) {
       case ORDER_STATUSES.DELIVERED:
@@ -50,8 +53,16 @@ export default function RecentActivity({ recentOrders, recentBookings }: RecentA
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-lg font-semibold text-gray-900">Recent Orders</CardTitle>
+          <Button
+            variant="ghost"
+            className="text-sm text-primary hover:text-primary/80"
+            onClick={() => navigate('/my-orders')}
+          >
+            View All
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
         </CardHeader>
         <CardContent>
           {recentOrders.length === 0 ? (

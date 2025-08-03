@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Clock } from 'lucide-react';
+import { Clock, Loader2 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { getPakistanTime } from '@/lib/pakistan-time';
 
@@ -48,6 +48,8 @@ export function RoomCardCalendar({
   const timeSlots = useMemo(() => {
     const slots: TimeSlot[] = [];
     const now = getPakistanTime();
+    const selectedDateTime = new Date(`${selectedDate}T00:00:00`);
+    const isPastDate = selectedDateTime < new Date(now.toDateString());
     
     if (isNightShift) {
       // Night shift: 8 PM to 7 AM
@@ -71,7 +73,7 @@ export function RoomCardCalendar({
         
         slots.push({
           time: timeString,
-          available: !hasConflict && !isPast
+          available: !hasConflict && !isPast && !isPastDate
         });
       }
       
@@ -98,7 +100,7 @@ export function RoomCardCalendar({
         
         slots.push({
           time: timeString,
-          available: !hasConflict && !isPast
+          available: !hasConflict && !isPast && !isPastDate
         });
       }
     } else {
@@ -122,7 +124,7 @@ export function RoomCardCalendar({
         
         slots.push({
           time: timeString,
-          available: !hasConflict && !isPast
+          available: !hasConflict && !isPast && !isPastDate
         });
       }
     }
@@ -144,6 +146,7 @@ export function RoomCardCalendar({
     return (
       <div className="space-y-3">
         <div className="flex items-center gap-2">
+          <Loader2 className="h-4 w-4 animate-spin" />
           <h4 className="text-sm font-medium">Loading available times...</h4>
         </div>
         <div className="grid grid-cols-4 gap-1">
