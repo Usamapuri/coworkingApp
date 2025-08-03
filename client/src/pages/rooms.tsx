@@ -80,14 +80,26 @@ export default function RoomsPage() {
   const [selectedDateView, setSelectedDateView] = useState(getPakistanDateString());
   const [isNightShift, setIsNightShift] = useState(false);
 
-  const { data: rooms = [] } = useQuery<MeetingRoom[]>({
+  const { data: rooms = [], error: roomsError } = useQuery<MeetingRoom[]>({
     queryKey: ["/api/rooms", user?.site],
     enabled: !!user,
+    onError: (error) => {
+      console.error('❌ Error fetching rooms:', error);
+    },
+    onSuccess: (data) => {
+      console.log('✅ Successfully fetched rooms:', data);
+    }
   });
 
-  const { data: myBookings = [] } = useQuery<MeetingBooking[]>({
+  const { data: myBookings = [], error: bookingsError } = useQuery<MeetingBooking[]>({
     queryKey: ["/api/bookings"],
     enabled: !!user,
+    onError: (error) => {
+      console.error('❌ Error fetching bookings:', error);
+    },
+    onSuccess: (data) => {
+      console.log('✅ Successfully fetched bookings:', data);
+    }
   });
 
   // WebSocket for real-time booking updates

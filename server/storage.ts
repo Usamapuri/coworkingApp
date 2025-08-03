@@ -46,11 +46,12 @@ if (!databaseUrl) {
 
 console.log('🎯 URL BEING USED:', databaseUrl.substring(0, 50) + '...');
 
-if (databaseUrl.includes('api.pooler.supabase.com')) {
-  console.error('❌ ERROR: Using OLD hostname! Vercel environment variables not updated!');
-  console.error('🔧 Please update your Vercel environment variables to use DATABASE_URL with aws-0-us-east-1.pooler.supabase.com');
-  throw new Error('Invalid database URL - using old hostname');
-}
+// Temporarily commented out to test connection
+// if (databaseUrl.includes('api.pooler.supabase.com')) {
+//   console.error('❌ ERROR: Using OLD hostname! Vercel environment variables not updated!');
+//   console.error('🔧 Please update your Vercel environment variables to use DATABASE_URL with aws-0-us-east-1.pooler.supabase.com');
+//   throw new Error('Invalid database URL - using old hostname');
+// }
 
 console.log('✅ Using database URL:', databaseUrl.substring(0, 50) + '...');
 

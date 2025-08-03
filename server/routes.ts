@@ -9,13 +9,21 @@ import { Strategy as LocalStrategy } from "passport-local";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
-import { storage, db } from "./storage.js";
+import compression from "compression";
+import { storage } from "./supabase-storage.js";
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.SUPABASE_URL || 'https://grrwjmuosgwoayqytodc.supabase.co';
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdycndqbXVvc2d3b2F5cXl0b2RjIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NDA2NjA3NSwiZXhwIjoyMDY5NjQyMDc1fQ.hmaLXUyDbQpIJKmXrdQcC45to3MmWyFriOrHcvA6q_w';
+const supabase = createClient(supabaseUrl, supabaseKey);
 import * as schema from "../shared/schema.js";
 import { eq, desc, sql, asc, and, or } from "drizzle-orm";
 import { emailService } from "./email-service.js";
 import webpush from "web-push";
 import { fileURLToPath } from 'url';
 import pgSession from "connect-pg-simple";
+import pg from 'pg';
+import { SupabaseSessionStore } from "./supabase-session-store.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -25,11 +33,13 @@ const sessionConfig: any = {
   secret: process.env.SESSION_SECRET || "your-secret-key-here",
   resave: false,
   saveUninitialized: false,
+  proxy: true, // Trust the reverse proxy
   cookie: {
     secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
     httpOnly: true,
-    sameSite: process.env.NODE_ENV === 'production' ? "strict" : "lax" as const,
+    sameSite: 'none' as const, // Allow cross-origin cookies
+    domain: process.env.NODE_ENV === 'production' ? '.railway.app' : undefined, // Allow cookies on railway.app subdomains
   },
 };
 
@@ -169,6 +179,22 @@ const upload = multer({
 export async function registerRoutes(app: Express): Promise<Server> {
   // CORS middleware to handle cross-origin requests
   app.use((req, res, next) => {
+    const origin = req.headers.origin;
+    if (origin) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+    }
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    next();
+  });
+  
+  // Handle preflight requests
+  app.options('*', (req, res) => {
+    res.status(200).end();
+  });
+  
+  app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
     res.header('Access-Control-Allow-Credentials', 'true');
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
@@ -181,22 +207,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Configure session store for production
-  let sessionStore = undefined;
-  if (process.env.NODE_ENV === 'production' && process.env.DATABASE_URL) {
-    try {
-      const PostgresStore = pgSession(session);
-      sessionStore = new PostgresStore({
-        conObject: {
-          connectionString: process.env.DATABASE_URL,
-          ssl: { rejectUnauthorized: false }
-        },
-        tableName: 'sessions'
-      });
-      console.log('✅ Using PostgreSQL session store for production');
-    } catch (error) {
-      console.warn('⚠️ Failed to initialize PostgreSQL session store, falling back to MemoryStore:', error);
+  // Compression middleware for better performance
+  app.use(compression({
+    level: 6, // Balanced compression level
+    threshold: 1024, // Only compress responses larger than 1KB
+    filter: (req, res) => {
+      // Don't compress if the client doesn't support it
+      if (req.headers['x-no-compression']) {
+        return false;
+      }
+      // Use compression for all other requests
+      return compression.filter(req, res);
     }
+  }));
+
+  // Configure session store for production using Supabase (bypasses SSL issues)
+  let sessionStore = undefined;
+  
+  if (process.env.NODE_ENV === 'production') {
+    try {
+      // Use custom Supabase session store to avoid PostgreSQL SSL certificate issues
+      sessionStore = new SupabaseSessionStore({
+        ttl: 86400 // 24 hours in seconds
+      });
+      
+      console.log('✅ Supabase session store configured successfully');
+    } catch (error) {
+      console.error('❌ Failed to configure Supabase session store:', error);
+      console.log('⚠️ Falling back to MemoryStore');
+      sessionStore = undefined;
+    }
+  } else {
+    console.log('ℹ️ Using MemoryStore for development');
   }
 
   // Session and passport setup with production-ready store
@@ -208,6 +250,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(session(productionSessionConfig));
   app.use(passport.initialize());
   app.use(passport.session());
+
+  // Caching middleware for better performance
+  app.use((req, res, next) => {
+    // Cache static assets for 1 year
+    if (req.path.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$/)) {
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    }
+    // Cache API responses for 5 minutes (except for dynamic data)
+    else if (req.path.startsWith('/api/') && 
+             (req.path.includes('/menu') || req.path.includes('/rooms') || req.path.includes('/categories'))) {
+      res.setHeader('Cache-Control', 'public, max-age=300');
+    }
+    // No cache for authentication and dynamic endpoints
+    else if (req.path.startsWith('/api/auth') || req.path.includes('/orders') || req.path.includes('/bookings')) {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+    }
+    // Default cache for other API endpoints
+    else if (req.path.startsWith('/api/')) {
+      res.setHeader('Cache-Control', 'public, max-age=60');
+    }
+    next();
+  });
   
   // DISABLED: Metrics tracking was consuming excessive compute units
   // Only enable for debugging purposes, not in production
@@ -223,8 +289,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   //   next();
   // });
 
-  // Serve uploaded images
-  app.use('/uploads', express.static(uploadsDir));
+  // Serve uploaded images with caching
+  app.use('/uploads', express.static(uploadsDir, {
+    maxAge: '1d', // Cache uploaded images for 1 day
+    etag: true,
+    lastModified: true
+  }));
 
   // WebSocket setup
   const httpServer = createServer(app);
@@ -288,13 +358,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('Health check requested');
       
       // Test database connection
-      const userCount = await db.select({ count: sql`count(*)` }).from(schema.users);
-      console.log('Database connection successful, user count:', userCount[0]?.count);
+      const { data: users, error } = await supabase.from('users').select('*');
+      if (error) throw error;
+      console.log('Database connection successful, user count:', users?.length || 0);
       
       res.json({ 
         status: 'healthy', 
         database: 'connected',
-        userCount: userCount[0]?.count,
+        userCount: users?.length || 0,
         timestamp: new Date().toISOString()
       });
     } catch (error) {
@@ -455,7 +526,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { site } = req.query;
       const rooms = await storage.getMeetingRooms(site as string);
-      const availableRooms = rooms.filter(room => room.is_available);
+      const availableRooms = rooms.filter(room => room.is_active);
       res.json(availableRooms);
     } catch (error) {
       console.error("Error fetching available rooms:", error);
@@ -1757,6 +1828,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   //     console.error('🚨 ALERT: Memory usage exceeds 1GB!', METRICS.memory, 'MB');
   //   }
   // }, 30000);
+
+  // Serve static files for production (must be after all API routes)
+  if (process.env.NODE_ENV === 'production') {
+    const distPath = path.resolve(__dirname, '..', 'dist');
+    const publicPath = path.resolve(distPath, 'public');
+    
+    // Serve static assets from dist/public
+    if (fs.existsSync(publicPath)) {
+      app.use(express.static(publicPath));
+      console.log('✅ Serving static files from:', publicPath);
+    }
+    
+    // Serve index.html for all non-API routes (SPA routing)
+    app.get('*', (req, res, next) => {
+      if (req.path.startsWith('/api/')) {
+        return next();
+      }
+      
+      const indexPath = path.resolve(distPath, 'index.html');
+      if (fs.existsSync(indexPath)) {
+        res.sendFile(indexPath);
+      } else {
+        next();
+      }
+    });
+  }
 
   return httpServer;
 }

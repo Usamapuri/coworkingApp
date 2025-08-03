@@ -56,19 +56,37 @@ export default function CafePage() {
   const [deliveryLocation, setDeliveryLocation] = useState("");
   const [currentOrder, setCurrentOrder] = useState<CafeOrder | null>(null);
 
-  const { data: categories = [] } = useQuery({
+  const { data: categories = [], error: categoriesError } = useQuery({
     queryKey: ["/api/menu/categories"],
     enabled: !!user,
+    onError: (error) => {
+      console.error('❌ Error fetching menu categories:', error);
+    },
+    onSuccess: (data) => {
+      console.log('✅ Successfully fetched menu categories:', data);
+    }
   });
 
-  const { data: menuItems = [] } = useQuery<MenuItemType[]>({
+  const { data: menuItems = [], error: menuError } = useQuery<MenuItemType[]>({
     queryKey: ["/api/menu/items"],
     enabled: !!user,
+    onError: (error) => {
+      console.error('❌ Error fetching menu items:', error);
+    },
+    onSuccess: (data) => {
+      console.log('✅ Successfully fetched menu items:', data);
+    }
   });
 
-  const { data: myOrders = [] } = useQuery<CafeOrder[]>({
+  const { data: myOrders = [], error: ordersError } = useQuery<CafeOrder[]>({
     queryKey: ["/api/cafe/orders"],
     enabled: !!user,
+    onError: (error) => {
+      console.error('❌ Error fetching orders:', error);
+    },
+    onSuccess: (data) => {
+      console.log('✅ Successfully fetched orders:', data);
+    }
   });
 
   // WebSocket for real-time order updates

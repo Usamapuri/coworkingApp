@@ -63,12 +63,17 @@ async function createTestUser() {
   console.log('🔧 Creating a new test user...\n');
   
   const newUser = {
-    email: 'testuser@calmkaaj.com',
+    email: 'test@calmkaaj.com',
     password: 'testpassword123',
     first_name: 'Test',
     last_name: 'User',
-    role: 'user',
-    site: 'blue_area'
+    role: 'member_individual',
+    site: 'blue_area',
+    credits: 100,
+    used_credits: 0,
+    is_active: true,
+    can_charge_cafe_to_org: true,
+    can_charge_room_to_org: true
   };
   
   try {
@@ -117,8 +122,8 @@ async function createTestUser() {
   
   console.log('\n' + '='.repeat(50));
   console.log('💡 Test credentials:');
-  console.log('Email: testuser@calmkaaj.com');
+  console.log('Email: test@calmkaaj.com');
   console.log('Password: testpassword123');
 }
 
-createTestUser().catch(console.error); 
+createTestUser().catch(console.error);

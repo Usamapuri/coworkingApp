@@ -18,13 +18,11 @@ async function initializeServer() {
   // Register all routes
   const server = await registerRoutes(app);
   
-  // For local development
-  if (process.env.NODE_ENV !== 'production') {
-    const PORT = process.env.PORT || 3001;
-    server.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-    });
-  }
+  // Start server for both development and production (for Railway deployment)
+  const PORT = process.env.PORT || 3001;
+  server.listen(PORT, () => {
+    console.log(`Server running on port ${PORT} in ${process.env.NODE_ENV} mode`);
+  });
   
   return server;
 }

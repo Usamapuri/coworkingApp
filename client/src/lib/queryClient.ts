@@ -12,12 +12,25 @@ export async function apiRequest(
   url: string,
   data?: unknown | undefined,
 ): Promise<Response> {
+  console.log(`🔍 Making ${method} request to ${url}...`);
+  if (data) {
+    console.log('📦 Request data:', data);
+  }
+  
   const res = await fetch(url, {
     method,
-    headers: data ? { "Content-Type": "application/json" } : {},
+    headers: {
+      ...(data ? { "Content-Type": "application/json" } : {}),
+      "Accept": "application/json",
+      "X-Requested-With": "XMLHttpRequest"
+    },
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
+    mode: "cors"
   });
+  
+  console.log(`📡 Response status: ${res.status} ${res.statusText}`);
+  console.log('🍪 Response cookies:', res.headers.get('set-cookie'));
 
   await throwIfResNotOk(res);
   return res;
@@ -29,9 +42,19 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
+    console.log(`🔍 Making GET request to ${queryKey[0]}...`);
+    
     const res = await fetch(queryKey[0] as string, {
+      headers: {
+        "Accept": "application/json",
+        "X-Requested-With": "XMLHttpRequest"
+      },
       credentials: "include",
+      mode: "cors"
     });
+    
+    console.log(`📡 Response status: ${res.status} ${res.statusText}`);
+    console.log('🍪 Response cookies:', res.headers.get('set-cookie'));
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {
       return null;
