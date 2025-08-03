@@ -49,12 +49,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         // Update quantity if item already exists
         return prevCart.map(cartItem =>
           cartItem.id === item.id
-            ? { ...cartItem, quantity: cartItem.quantity + item.quantity }
+            ? { ...cartItem, quantity: (cartItem.quantity || 0) + 1 }
             : cartItem
         );
       } else {
-        // Add new item to cart
-        return [...prevCart, item];
+        // Add new item to cart with quantity 1
+        return [...prevCart, { ...item, quantity: 1 }];
       }
     });
   };
@@ -82,12 +82,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const getCartTotal = () => {
     return cart.reduce((total, item) => {
-      return total + (parseFloat(item.price) * item.quantity);
+      const price = parseFloat(item.price.toString());
+      const quantity = item.quantity || 0;
+      return total + (price * quantity);
     }, 0);
   };
 
   const getCartItemCount = () => {
-    return cart.reduce((count, item) => count + item.quantity, 0);
+    return cart.reduce((count, item) => count + (item.quantity || 0), 0);
   };
 
   return (
