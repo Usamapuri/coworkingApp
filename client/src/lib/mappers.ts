@@ -29,3 +29,33 @@ export function mapRoom(dbRoom: any) {
     amenities: ["Whiteboard", "TV Screen"] // Default amenities
   };
 }
+
+// Map database order to frontend order
+export function mapOrder(dbOrder: any) {
+  return {
+    ...dbOrder,
+    total_amount: dbOrder.total_amount.toString(),
+    items: dbOrder.items?.map((item: any) => ({
+      ...item,
+      price: item.price.toString(),
+      menu_item: {
+        ...item.menu_item,
+        is_available: item.menu_item.is_active,
+        price: item.menu_item.price.toString()
+      }
+    }))
+  };
+}
+
+// Map database booking to frontend booking
+export function mapBooking(dbBooking: any) {
+  return {
+    ...dbBooking,
+    room: dbBooking.room ? {
+      ...dbBooking.room,
+      is_available: dbBooking.room.is_active,
+      credit_cost_per_hour: Math.ceil(dbBooking.room.hourly_rate / 100),
+      amenities: ["Whiteboard", "TV Screen"] // Default amenities
+    } : null
+  };
+}
