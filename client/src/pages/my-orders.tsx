@@ -1,13 +1,13 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useUser } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth';
 import { CafeOrder } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Loader2 } from 'lucide-react';
 
 export default function MyOrders() {
-  const { user } = useUser();
+  const { user } = useAuth();
 
   const { data: orders = [], isLoading } = useQuery<CafeOrder[]>({
     queryKey: ['/api/cafe/orders'],
