@@ -22,6 +22,7 @@ import AdminDashboard from "@/pages/admin-dashboard";
 import CreateOrderPage from "@/pages/create-order";
 import BillingTransactionsPage from "@/pages/billing-transactions";
 import MenuManagement from "@/pages/menu-management";
+import MyOrdersPage from "@/pages/my-orders";
 import Navigation from "@/components/layout/navigation";
 import MobileNav from "@/components/layout/mobile-nav";
 import Footer from "@/components/layout/footer";
@@ -85,6 +86,7 @@ function Router() {
         <Route path="/admin" component={AdminPage} />
         <Route path="/menu-management" component={MenuManagement} />
         <Route path="/profile" component={ProfilePage} />
+        <Route path="/my-orders" component={MyOrdersPage} />
         <Route component={NotFound} />
       </Switch>
     );
@@ -97,6 +99,7 @@ function Router() {
       <Route path="/cafe" component={CafePage} />
       <Route path="/rooms" component={RoomsPage} />
       <Route path="/community" component={CommunityPage} />
+      <Route path="/my-orders" component={MyOrdersPage} />
       {user.role === 'member_organization_admin' && (
         <Route path="/organization" component={OrganizationPage} />
       )}

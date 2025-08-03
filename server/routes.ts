@@ -890,12 +890,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const startOfDay = new Date(`${date}T00:00:00`);
       const endOfDay = new Date(`${date}T23:59:59`);
       
+      console.log('Fetching bookings for room:', roomId, 'date:', date);
+      console.log('Start of day:', startOfDay);
+      console.log('End of day:', endOfDay);
+      
       const bookings = await db.select()
         .from(schema.meeting_bookings)
         .where(
-          sql`${schema.meeting_bookings.room_id} = ${roomId} AND ${schema.meeting_bookings.status} = 'confirmed' AND DATE(${schema.meeting_bookings.start_time}) = ${date}`
+          and(
+            eq(schema.meeting_bookings.room_id, roomId),
+            eq(schema.meeting_bookings.status, 'confirmed'),
+            sql`${schema.meeting_bookings.start_time} >= ${startOfDay}`,
+            sql`${schema.meeting_bookings.start_time} <= ${endOfDay}`
+          )
         )
         .orderBy(asc(schema.meeting_bookings.start_time));
+      
+      console.log('Found bookings:', bookings);
       
       res.json(bookings);
     } catch (error) {
