@@ -4,17 +4,24 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useUser } from '@/hooks/use-auth';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { OrderStatusModal } from './order-status-modal';
 
 export function CartDrawer() {
   const { cart, updateQuantity, removeFromCart, clearCart, getCartTotal } = useCart();
   const { user } = useUser();
   const [deliveryLocation, setDeliveryLocation] = React.useState('');
   const [notes, setNotes] = React.useState('');
+  const [showStatusModal, setShowStatusModal] = React.useState(false);
+  const [orderStatus, setOrderStatus] = React.useState<'preparing' | 'success'>('preparing');
+  const queryClient = useQueryClient();
 
   const placeOrderMutation = useMutation({
     mutationFn: async () => {
+      setShowStatusModal(true);
+      setOrderStatus('preparing');
+
       const response = await fetch('/api/cafe/orders', {
         method: 'POST',
         headers: {
@@ -41,12 +48,15 @@ export function CartDrawer() {
       return response.json();
     },
     onSuccess: () => {
-      toast.success('Order placed successfully');
+      setOrderStatus('success');
       clearCart();
       setDeliveryLocation('');
       setNotes('');
+      // Invalidate and refetch orders query to update the list
+      queryClient.invalidateQueries({ queryKey: ['/api/cafe/orders'] });
     },
     onError: (error) => {
+      setShowStatusModal(false);
       toast.error(error instanceof Error ? error.message : 'Failed to place order');
     },
   });
@@ -74,7 +84,23 @@ export function CartDrawer() {
       <div className="flex-1 overflow-y-auto">
         {cart.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
-            Your cart is empty
+            <div className="mb-4">
+              <svg
+                className="mx-auto h-12 w-12 text-gray-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+                />
+              </svg>
+            </div>
+            <p className="text-lg font-medium mb-2">Your cart is empty</p>
+            <p className="text-sm mb-4">Add some delicious items to get started!</p>
           </div>
         ) : (
           <div className="space-y-4 p-4">
@@ -141,6 +167,12 @@ export function CartDrawer() {
           </Button>
         </div>
       )}
+
+      <OrderStatusModal
+        isOpen={showStatusModal}
+        onClose={() => setShowStatusModal(false)}
+        status={orderStatus}
+      />
     </div>
   );
 }

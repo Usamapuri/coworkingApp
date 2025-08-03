@@ -25,32 +25,41 @@ export function RoomCardCalendar({
   selectedTimeSlot,
   isNightShift = false
 }: RoomCardCalendarProps) {
-  // Fetch room bookings for the selected date with stale time for real-time updates
-  const { data: bookings = [], refetch } = useQuery({
+  // Fetch room bookings for the selected date
+  const { data: bookings = [], error: bookingsError, isLoading } = useQuery({
     queryKey: ['room-bookings', room.id, selectedDate],
-    queryFn: () => fetch(`/api/rooms/${room.id}/bookings?date=${selectedDate}`).then(res => res.json()),
+    queryFn: async () => {
+      console.log('Fetching bookings for room:', room.id, 'date:', selectedDate);
+      const response = await fetch(`/api/rooms/${room.id}/bookings?date=${selectedDate}`, {
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch room bookings');
+      }
+      const data = await response.json();
+      console.log('Bookings data:', data);
+      return data;
+    },
     staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
     refetchInterval: false, // Disable auto-polling to reduce compute costs
   });
 
   // Generate time slots using useMemo to avoid infinite loops
   const timeSlots = useMemo(() => {
-    if (!Array.isArray(bookings)) return [];
-    
     const slots: TimeSlot[] = [];
+    const now = getPakistanTime();
     
     if (isNightShift) {
-      // Night shift: 8 PM to 7 AM (12 slots)
-      for (let hour = 20; hour <= 23; hour++) { // 8 PM to 11 PM
+      // Night shift: 8 PM to 7 AM
+      // First part: 8 PM to 11 PM
+      for (let hour = 20; hour <= 23; hour++) {
         const timeString = `${hour.toString().padStart(2, '0')}:00`;
         const slotStart = new Date(`${selectedDate}T${timeString}`);
-        const slotEnd = new Date(slotStart.getTime() + 60 * 60 * 1000); // 1 hour later
+        const slotEnd = new Date(slotStart.getTime() + 60 * 60 * 1000);
         
-        // Check if this slot conflicts with any existing booking
-        const hasConflict = bookings.some((booking: any) => {
+        const hasConflict = Array.isArray(bookings) && bookings.some((booking: any) => {
           const bookingStart = new Date(booking.start_time);
           const bookingEnd = new Date(booking.end_time);
-          
           return (
             booking.status === 'confirmed' &&
             slotStart < bookingEnd &&
@@ -58,59 +67,57 @@ export function RoomCardCalendar({
           );
         });
         
+        const isPast = slotStart < now;
+        
         slots.push({
           time: timeString,
-          available: !hasConflict,
+          available: !hasConflict && !isPast
         });
       }
       
-      // Continue with 12 AM to 7 AM
-      for (let hour = 0; hour <= 7; hour++) { // 12 AM to 7 AM
+      // Second part: 12 AM to 7 AM (next day)
+      for (let hour = 0; hour <= 7; hour++) {
         const timeString = `${hour.toString().padStart(2, '0')}:00`;
         const nextDay = new Date(selectedDate);
         nextDay.setDate(nextDay.getDate() + 1);
         const nextDateString = nextDay.toISOString().split('T')[0];
         const slotStart = new Date(`${nextDateString}T${timeString}`);
-        const slotEnd = new Date(slotStart.getTime() + 60 * 60 * 1000); // 1 hour later
+        const slotEnd = new Date(slotStart.getTime() + 60 * 60 * 1000);
         
-        // Check if this slot conflicts with any existing booking
-        const hasConflict = bookings.some((booking: any) => {
+        const hasConflict = Array.isArray(bookings) && bookings.some((booking: any) => {
           const bookingStart = new Date(booking.start_time);
           const bookingEnd = new Date(booking.end_time);
-          
           return (
             booking.status === 'confirmed' &&
             slotStart < bookingEnd &&
             slotEnd > bookingStart
           );
         });
+        
+        const isPast = slotStart < now;
         
         slots.push({
           time: timeString,
-          available: !hasConflict,
+          available: !hasConflict && !isPast
         });
       }
     } else {
-      // Day shift: 8 AM to 7 PM (12 slots)
-      for (let hour = 8; hour <= 19; hour++) { // 8 AM to 7 PM
+      // Day shift: 8 AM to 7 PM
+      for (let hour = 8; hour <= 19; hour++) {
         const timeString = `${hour.toString().padStart(2, '0')}:00`;
         const slotStart = new Date(`${selectedDate}T${timeString}`);
-        const slotEnd = new Date(slotStart.getTime() + 60 * 60 * 1000); // 1 hour later
+        const slotEnd = new Date(slotStart.getTime() + 60 * 60 * 1000);
         
-        // Check if this slot conflicts with any existing booking
-        const hasConflict = bookings.some((booking: any) => {
+        const hasConflict = Array.isArray(bookings) && bookings.some((booking: any) => {
           const bookingStart = new Date(booking.start_time);
           const bookingEnd = new Date(booking.end_time);
-          
           return (
             booking.status === 'confirmed' &&
             slotStart < bookingEnd &&
             slotEnd > bookingStart
           );
         });
-
-        // Check if this slot is in the past using Pakistan time
-        const now = getPakistanTime();
+        
         const isPast = slotStart < now;
         
         slots.push({
@@ -132,6 +139,32 @@ export function RoomCardCalendar({
     if (hourNum === 12) return '12:00 PM';
     return `${hourNum - 12}:00 PM`;
   };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <h4 className="text-sm font-medium">Loading available times...</h4>
+        </div>
+        <div className="grid grid-cols-4 gap-1">
+          {Array.from({ length: 12 }).map((_, i) => (
+            <div
+              key={i}
+              className="h-8 bg-gray-100 animate-pulse rounded"
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (bookingsError) {
+    return (
+      <div className="text-red-500 text-sm">
+        Error loading available times. Please try again.
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-3">
@@ -164,8 +197,6 @@ export function RoomCardCalendar({
           </Button>
         ))}
       </div>
-
-
     </div>
   );
 }
