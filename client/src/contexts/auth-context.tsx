@@ -21,6 +21,17 @@ export function useAuth() {
   return context;
 }
 
+function addDefaultUserValues(user: any): User {
+  return {
+    ...user,
+    credits: 100,
+    used_credits: 0,
+    is_active: true,
+    can_charge_cafe_to_org: true,
+    can_charge_room_to_org: true
+  };
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const queryClient = useQueryClient();
@@ -34,7 +45,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         });
         if (response.ok) {
           const data = await response.json();
-          return data.user;
+          return addDefaultUserValues(data.user);
         }
         return null;
       } catch (error) {
@@ -58,7 +69,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return response.json();
     },
     onSuccess: (data) => {
-      setUser(data.user);
+      setUser(addDefaultUserValues(data.user));
       queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
     },
   });
@@ -69,7 +80,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return response.json();
     },
     onSuccess: (data) => {
-      setUser(data.user);
+      setUser(addDefaultUserValues(data.user));
       queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
     },
   });

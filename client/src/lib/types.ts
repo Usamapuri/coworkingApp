@@ -4,14 +4,14 @@ export interface User {
   first_name: string;
   last_name: string;
   phone?: string;
-  role: 'member_individual' | 'member_organization_admin' | 'cafe_manager' | 'calmkaaj_admin';
+  role: 'user' | 'admin' | 'cafe_manager';
   organization_id?: string;
   site: 'blue_area' | 'i_10';
-  credits: number;
-  used_credits: number;
-  is_active: boolean;
-  can_charge_cafe_to_org: boolean;
-  can_charge_room_to_org: boolean;
+  credits?: number;
+  used_credits?: number;
+  is_active?: boolean;
+  can_charge_cafe_to_org?: boolean;
+  can_charge_room_to_org?: boolean;
   created_at?: string;
 }
 
@@ -30,8 +30,7 @@ export interface MenuItem {
   price: string;
   category_id?: number;
   image_url?: string;
-  is_available: boolean;
-  is_daily_special: boolean;
+  is_active: boolean;
   site: string;
   created_at?: string;
 }
@@ -41,10 +40,10 @@ export interface MeetingRoom {
   name: string;
   description?: string;
   capacity: number;
-  credit_cost_per_hour: number;
+  hourly_rate: number;
   amenities?: string[];
   image_url?: string;
-  is_available: boolean;
+  is_active: boolean;
   site: string;
   created_at?: string;
 }
