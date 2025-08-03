@@ -1,224 +1,129 @@
-import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "@/hooks/use-auth";
-import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Users, Coins } from "lucide-react";
-import { MeetingRoom } from "@/lib/types";
+import React from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { useUser } from '@/hooks/use-auth';
+import { useMutation } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { MeetingRoom } from '@/lib/types';
 
 interface BookingModalProps {
-  room: MeetingRoom | null;
-  bookingData: {
-    date: string;
-    start_time: string;
-    duration: string;
-  };
+  isOpen: boolean;
   onClose: () => void;
+  room: MeetingRoom;
+  selectedDate: string;
+  selectedTime: string;
+  onSuccess: () => void;
 }
 
-export default function BookingModal({ room, bookingData, onClose }: BookingModalProps) {
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [billingType, setBillingType] = useState<"personal" | "organization">("personal");
-  const [notes, setNotes] = useState("");
+export function BookingModal({ isOpen, onClose, room, selectedDate, selectedTime, onSuccess }: BookingModalProps) {
+  const { user } = useUser();
+  const [notes, setNotes] = React.useState('');
 
-  const calculateCreditsNeeded = () => {
-    if (!room) return 0;
-    // Fixed credit calculation: 1 hour = 1 credit, 30 min = 0.5 credits
-    return parseFloat(bookingData.duration);
-  };
+  const bookingMutation = useMutation({
+    mutationFn: async () => {
+      // Convert selected date and time to start_time and end_time
+      const startTime = new Date(`${selectedDate}T${selectedTime}`);
+      const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // 1 hour later
 
-  const calculateEndTime = () => {
-    if (!bookingData.date || !bookingData.start_time) return "";
-    
-    const startDateTime = new Date(`${bookingData.date}T${bookingData.start_time}`);
-    const endDateTime = new Date(startDateTime.getTime() + (parseFloat(bookingData.duration) * 60 * 60 * 1000));
-    
-    return endDateTime.toISOString();
-  };
+      const response = await fetch('/api/bookings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          room_id: room.id,
+          start_time: startTime.toISOString(),
+          end_time: endTime.toISOString(),
+          notes,
+          billed_to: 'personal'
+        }),
+      });
 
-  const bookRoomMutation = useMutation({
-    mutationFn: async (bookingDetails: any) => {
-      const response = await apiRequest("POST", "/api/bookings", bookingDetails);
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to create booking');
+      }
+
       return response.json();
     },
     onSuccess: () => {
-      toast({
-        title: "Room Booked",
-        description: "Your meeting room has been booked successfully",
-      });
+      toast.success('Room booked successfully');
+      setNotes('');
+      onSuccess();
       onClose();
-      queryClient.invalidateQueries({ queryKey: ["/api/bookings"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
     },
-    onError: (error: any) => {
-      toast({
-        title: "Booking Failed",
-        description: error.message || "Failed to book room",
-        variant: "destructive",
-      });
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : 'Failed to book room');
     },
   });
 
   const handleBookRoom = () => {
-    if (!room || !user) return;
-
-    const creditsNeeded = calculateCreditsNeeded();
-    const availableCredits = user.credits - user.used_credits;
-
-    if (creditsNeeded > availableCredits) {
-      toast({
-        title: "Insufficient Credits",
-        description: `You need ${creditsNeeded} credits but only have ${availableCredits} available`,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const startDateTime = new Date(`${bookingData.date}T${bookingData.start_time}`);
-    const endDateTime = calculateEndTime();
-
-    const bookingDetails = {
-      room_id: room.id,
-      start_time: startDateTime.toISOString(),
-      end_time: endDateTime,
-      billed_to: billingType,
-      notes,
-    };
-
-    bookRoomMutation.mutate(bookingDetails);
+    bookingMutation.mutate();
   };
 
-  if (!room) return null;
-
-  const creditsNeeded = calculateCreditsNeeded();
-  const availableCredits = user ? user.credits - user.used_credits : 0;
+  const availableCredits = (user?.credits || 0) - (user?.used_credits || 0);
+  const creditsNeeded = room.credit_cost_per_hour || Math.ceil(room.hourly_rate / 100);
+  const canBook = availableCredits >= creditsNeeded;
 
   return (
-    <Dialog open={!!room} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>Book {room.name}</DialogTitle>
         </DialogHeader>
-        
-        <div className="space-y-6">
-          {/* Room Details */}
-          <div>
-            <h3 className="font-medium mb-3">Room Details</h3>
-            <div className="space-y-2">
-              <div className="flex items-center space-x-2">
-                <Users className="h-4 w-4 text-gray-400" />
-                <span className="text-sm">Capacity: {room.capacity} people</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Coins className="h-4 w-4 text-gray-400" />
-                <span className="text-sm">Cost: {room.credit_cost_per_hour} credits/hour</span>
-              </div>
-            </div>
-            
-            {room.amenities && room.amenities.length > 0 && (
-              <div className="mt-3">
-                <p className="text-sm font-medium mb-2">Amenities:</p>
-                <div className="flex flex-wrap gap-1">
-                  {room.amenities.map((amenity) => (
-                    <Badge key={amenity} variant="secondary" className="text-xs">
-                      {amenity}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
+
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <h3 className="font-medium">Booking Details</h3>
+            <p className="text-sm text-gray-500">
+              Date: {new Date(selectedDate).toLocaleDateString('en-US', { 
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+              })}
+            </p>
+            <p className="text-sm text-gray-500">
+              Time: {selectedTime}
+            </p>
+            <p className="text-sm text-gray-500">
+              Duration: 1 hour
+            </p>
+            <p className="text-sm text-gray-500">
+              Credits Required: {creditsNeeded}
+            </p>
+            <p className="text-sm text-gray-500">
+              Your Available Credits: {availableCredits}
+            </p>
           </div>
 
-          {/* Booking Summary */}
-          <div>
-            <h3 className="font-medium mb-3">Booking Summary</h3>
-            <div className="bg-gray-50 p-3 rounded-lg space-y-2">
-              <div className="flex justify-between">
-                <span className="text-sm">Date:</span>
-                <span className="text-sm font-medium">
-                  {new Date(bookingData.date).toLocaleDateString('en-GB', { 
-                    day: '2-digit', 
-                    month: '2-digit', 
-                    year: 'numeric' 
-                  })}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm">Time:</span>
-                <span className="text-sm font-medium">
-                  {bookingData.start_time} ({bookingData.duration}h)
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm">Credits needed:</span>
-                <span className="text-sm font-medium">{creditsNeeded}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm">Available credits:</span>
-                <span className={`text-sm font-medium ${availableCredits >= creditsNeeded ? 'text-green-600' : 'text-red-600'}`}>
-                  {availableCredits}
-                </span>
-              </div>
-            </div>
-          </div>
-          
-          {/* Billing Toggle */}
-          {user?.can_charge_room_to_org && (
-            <div>
-              <Label className="text-sm font-medium mb-2 block">Bill to:</Label>
-              <RadioGroup value={billingType} onValueChange={setBillingType as any}>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="personal" id="personal" />
-                  <Label htmlFor="personal">Personal</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="organization" id="organization" />
-                  <Label htmlFor="organization">My Company</Label>
-                </div>
-              </RadioGroup>
-            </div>
-          )}
-          
-          {/* Notes */}
-          <div>
-            <Label htmlFor="notes" className="text-sm font-medium mb-2 block">
-              Notes (Optional)
-            </Label>
-            <Textarea
-              id="notes"
+          <div className="space-y-2">
+            <label className="block text-sm font-medium">Notes (optional)</label>
+            <textarea
+              className="w-full min-h-[100px] p-2 border rounded-md"
+              placeholder="Any special requirements..."
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Meeting purpose, special requirements..."
             />
           </div>
-          
-          <div className="flex space-x-2">
-            <Button
-              variant="outline"
-              onClick={onClose}
-              className="flex-1"
-            >
+
+          {!canBook && (
+            <div className="text-red-500 text-sm">
+              You don't have enough credits to book this room.
+              You need {creditsNeeded} credits but only have {availableCredits} available.
+            </div>
+          )}
+
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={onClose}>
               Cancel
             </Button>
             <Button
               onClick={handleBookRoom}
-              disabled={bookRoomMutation.isPending || creditsNeeded > availableCredits}
-              className="flex-1"
+              disabled={!canBook || bookingMutation.isPending}
             >
-              {bookRoomMutation.isPending ? "Booking..." : "Book Room"}
+              {bookingMutation.isPending ? 'Booking...' : 'Book Room'}
             </Button>
           </div>
         </div>

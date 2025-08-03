@@ -1,167 +1,146 @@
-import { useState } from "react";
-import { useCart } from "@/hooks/use-cart";
-import { useAuth } from "@/hooks/use-auth";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Minus, Plus, X } from "lucide-react";
+import React from 'react';
+import { useCart } from '@/hooks/use-cart';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { useUser } from '@/hooks/use-auth';
+import { useMutation } from '@tanstack/react-query';
+import { toast } from 'sonner';
 
-interface CartDrawerProps {
-  open: boolean;
-  onClose: () => void;
-}
-
-export default function CartDrawer({ open, onClose }: CartDrawerProps) {
-  const { cart, updateQuantity, removeFromCart, clearCart } = useCart();
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [billingType, setBillingType] = useState<"personal" | "organization">("personal");
-  const [notes, setNotes] = useState("");
-
-  const totalAmount = cart.reduce((sum, item) => sum + (parseFloat(item.price) * item.quantity), 0);
+export function CartDrawer() {
+  const { cart, updateQuantity, removeFromCart, clearCart, getCartTotal } = useCart();
+  const { user } = useUser();
+  const [deliveryLocation, setDeliveryLocation] = React.useState('');
+  const [notes, setNotes] = React.useState('');
 
   const placeOrderMutation = useMutation({
-    mutationFn: async (orderData: any) => {
-      const response = await apiRequest("POST", "/api/cafe/orders", orderData);
+    mutationFn: async () => {
+      const response = await fetch('/api/cafe/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          items: cart.map(item => ({
+            menu_item_id: item.id,
+            quantity: item.quantity,
+            price: parseFloat(item.price)
+          })),
+          delivery_location: deliveryLocation,
+          notes,
+          billed_to: 'personal'
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to place order');
+      }
+
       return response.json();
     },
     onSuccess: () => {
-      toast({
-        title: "Order Placed",
-        description: "Your order has been placed successfully",
-      });
+      toast.success('Order placed successfully');
       clearCart();
-      onClose();
-      queryClient.invalidateQueries({ queryKey: ["/api/cafe/orders"] });
+      setDeliveryLocation('');
+      setNotes('');
     },
-    onError: (error: any) => {
-      toast({
-        title: "Order Failed",
-        description: error.message || "Failed to place order",
-        variant: "destructive",
-      });
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : 'Failed to place order');
     },
   });
 
-  const handlePlaceOrder = () => {
-    if (cart.length === 0) return;
-
-    const orderData = {
-      items: cart.map(item => ({
-        menu_item_id: item.id,
-        quantity: item.quantity,
-      })),
-      billed_to: billingType,
-      notes,
-    };
-
-    placeOrderMutation.mutate(orderData);
+  const handleQuantityChange = (id: number, newQuantity: number) => {
+    if (newQuantity <= 0) {
+      removeFromCart(id);
+    } else {
+      updateQuantity(id, newQuantity);
+    }
   };
 
+  const handlePlaceOrder = () => {
+    if (!deliveryLocation) {
+      toast.error('Please enter a delivery location');
+      return;
+    }
+    placeOrderMutation.mutate();
+  };
+
+  const cartTotal = getCartTotal();
+
   return (
-    <Sheet open={open} onOpenChange={onClose}>
-      <SheetContent className="w-full sm:max-w-md">
-        <SheetHeader>
-          <SheetTitle>Your Cart</SheetTitle>
-        </SheetHeader>
-        
+    <div className="flex flex-col h-full">
+      <div className="flex-1 overflow-y-auto">
         {cart.length === 0 ? (
-          <div className="flex items-center justify-center h-64">
-            <p className="text-gray-500">Your cart is empty</p>
+          <div className="text-center py-8 text-gray-500">
+            Your cart is empty
           </div>
         ) : (
-          <div className="flex flex-col h-full">
-            <div className="flex-1 overflow-auto py-4 space-y-4">
-              {cart.map((item) => (
-                <div key={item.id} className="flex items-center space-x-4 p-4 border rounded-lg">
-                  <div className="flex-1">
-                    <h4 className="font-medium">{item.name}</h4>
-                    <p className="text-sm text-gray-500">Rs. {item.price}</p>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => updateQuantity(item.id, Math.max(0, item.quantity - 1))}
-                    >
-                      <Minus className="h-4 w-4" />
-                    </Button>
-                    <span className="w-8 text-center">{item.quantity}</span>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                    >
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  </div>
+          <div className="space-y-4 p-4">
+            {cart.map((item) => (
+              <div key={item.id} className="flex items-center justify-between border-b pb-4">
+                <div>
+                  <h3 className="font-medium">{item.name}</h3>
+                  <p className="text-sm text-gray-500">Rs. {parseFloat(item.price).toFixed(2)}</p>
+                </div>
+                <div className="flex items-center gap-2">
                   <Button
-                    variant="ghost"
+                    variant="outline"
                     size="icon"
-                    onClick={() => removeFromCart(item.id)}
+                    onClick={() => handleQuantityChange(item.id, (item.quantity || 0) - 1)}
                   >
-                    <X className="h-4 w-4" />
+                    -
+                  </Button>
+                  <span className="w-8 text-center">{item.quantity || 0}</span>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => handleQuantityChange(item.id, (item.quantity || 0) + 1)}
+                  >
+                    +
                   </Button>
                 </div>
-              ))}
-            </div>
-            
-            <div className="border-t pt-4 space-y-4">
-              {user?.can_charge_cafe_to_org && (
-                <div>
-                  <Label className="text-sm font-medium">Bill to:</Label>
-                  <RadioGroup value={billingType} onValueChange={setBillingType as any}>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="personal" id="personal" />
-                      <Label htmlFor="personal">Personal</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="organization" id="organization" />
-                      <Label htmlFor="organization">My Company</Label>
-                    </div>
-                  </RadioGroup>
-                </div>
-              )}
-              
-              <div>
-                <Label htmlFor="notes" className="text-sm font-medium">Notes (Optional)</Label>
-                <Textarea
-                  id="notes"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Special instructions..."
-                  className="mt-1"
-                />
               </div>
-              
-              <div className="flex items-center justify-between font-semibold">
-                <span>Total</span>
-                <span>Rs. {totalAmount.toFixed(2)}</span>
-              </div>
-              
-              <Button
-                onClick={handlePlaceOrder}
-                disabled={placeOrderMutation.isPending}
-                className="w-full"
-              >
-                {placeOrderMutation.isPending ? "Placing Order..." : "Place Order"}
-              </Button>
-            </div>
+            ))}
           </div>
         )}
-      </SheetContent>
-    </Sheet>
+      </div>
+
+      {cart.length > 0 && (
+        <div className="border-t p-4 space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">Delivery Location</label>
+            <Input
+              placeholder="e.g., Meeting Room A, 2nd Floor"
+              value={deliveryLocation}
+              onChange={(e) => setDeliveryLocation(e.target.value)}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Order Notes</label>
+            <Textarea
+              placeholder="Any special instructions..."
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+            />
+          </div>
+
+          <div className="flex justify-between items-center font-medium">
+            <span>Subtotal</span>
+            <span>Rs. {cartTotal.toFixed(2)}</span>
+          </div>
+
+          <Button
+            className="w-full"
+            onClick={handlePlaceOrder}
+            disabled={placeOrderMutation.isPending}
+          >
+            {placeOrderMutation.isPending ? 'Placing Order...' : 'Place Order'}
+          </Button>
+        </div>
+      )}
+    </div>
   );
 }
